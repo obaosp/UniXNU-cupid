@@ -178,6 +178,13 @@
       "original_sha256": "5090907b66c476e49c8f73d4cfe15de1b9056fa056e72ccb5295ead4d685603e",
       "native_symbol": "_lck_mtx_gate_wait",
       "evidence": "AppleImage4's lck_mtx_gate family. The XnuPrelink map paired this exact original body to the named native _lck_mtx_gate_* symbol in run 42481732673; the probe/fixture changes made the current matcher leave it unmatched. Bind the body by raw-byte hash to the same-source native gate implementation."
+    },
+    {
+      "original": "0xfffffff00ac991f8",
+      "original_size": 36,
+      "original_sha256": "2f6fec562b8d4b942dbabb093a78571b830b4bdf3e9034964852bb7ddac7fbe5",
+      "native_symbol": "_unixnu_sandbox_kalloc_mask",
+      "evidence": "Sandbox import: bti c; cbz x0; ldrb w8,[x0,#0x2c]; (else w8=14); lsl w8,#-1; mvn w0,w8; ret. It returns (1<<shift)-1, an alignment mask from the kalloc_type view. The emitted native __DATA_CONST placement overwrites the view (target 0x7e87c58 is native data), and no 12377 equivalent was paired. The device shim returns the original fallback mask 0x3fff (16 KiB); this is a bring-up workaround, revisit if sandbox reports a size/alignment fault."
     }
   ],
   "data": [],
