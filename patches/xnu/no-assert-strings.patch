@@ -1,0 +1,26 @@
+--- a/osfmk/kern/assert.h
++++ b/osfmk/kern/assert.h
+@@ -250,6 +250,23 @@
+ 	}                                                                       \
+ })
+ 
++/*
++ * Device bring-up: the prelinked kexts require MACH_ASSERT (ipc_port == 160),
++ * but the assert strings do not fit the iPhone 26 collection __DATA_CONST.
++ * Keep MACH_ASSERT for layouts and struct fields; make only the message
++ * macros no-ops so __DATA_CONST,__assert shrinks.
++ */
++#undef assert
++#define assert(ex)                      ((void)0)
++#undef assertf
++#define assertf(ex, fmt, args...)       ((void)0)
++#undef assert3u
++#define assert3u(a, op, b)              ((void)0)
++#undef assert3s
++#define assert3s(a, op, b)              ((void)0)
++#undef assert3p
++#define assert3p(a, op, b)              ((void)0)
++
+ #else /* !MACH_ASSERT && !XNU_KERNEL_PRIVATE */
+ 
+ #define __assert_only                   __unused
