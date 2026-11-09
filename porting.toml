@@ -140,7 +140,7 @@ result = "8 cores online; Features include paca and pacg on every core (FEAT_PAu
 kind = "device"
 reference = "notes/pac-trap-2026-11-07.md"
 command = "fastboot boot boot-v4-win2g.img"
-revision = "1d2195f61083ad02f08ca2d4a043784edfbda368"
+revision = "d093c5c1292400209634b7b82c78cd39fd9faa98"
 result = "XNU started on cupid for the first time and panicked on msr CNTP_CTL_EL0 (word 0xd51be228 at pc=0xfffffff00ad881c0): Gunyah leaves CNTHCTL_EL2.EL1PCEN clear, so the EL1 physical-timer write traps. The earlier PAC-instr=d5 reading was a wrapped line; see the CORRECTION in notes/pac-trap-2026-11-07.md."
 
 [[area]]
