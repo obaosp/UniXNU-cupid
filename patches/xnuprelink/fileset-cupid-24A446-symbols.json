@@ -192,6 +192,13 @@
       "original_sha256": "8d3c95deebf0774c9957f793e211f69002884b2dfa997461ae3a61b3947d3c72",
       "native_symbol": "_unixnu_check_noop",
       "evidence": "Sandbox callback target: validates an index against original pmap/VM tables at 0x7de5e30/0x7de5e90/0x7debdd0, multiplies by (0x4000 - (x2 & 0x3fff)), and calls 0xb411164 only on mismatch. The tables are overwritten by the native __DATA_CONST placement and no 12377 equivalent was paired. It has no writes, so a no-op is a safe bring-up shim; revisit if a real pmap consistency failure is suspected."
+    },
+    {
+      "original": "0xfffffff00ac48180",
+      "original_size": 184,
+      "original_sha256": "c31666b33883b789ded125fa93d9c3b73067f7e375e2054fcd24a8d7106bbf4c",
+      "native_symbol": "_zalloc_ro",
+      "evidence": "The XnuPrelink map already paired this exact original body to native _zalloc_ro (0x7390630). The original computes a zalloc_ro zone entry at 0xb747f80 + index*0xc0, calls 0xac43174, validates the returned pointer against the original pmap tables, and panics via 0xb411164 on mismatch. The native _zalloc_ro is the same-source allocator; bind by raw-byte hash."
     }
   ],
   "data": [],
