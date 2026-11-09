@@ -37,9 +37,13 @@
 # +0xd750 and returns 0. Structurally identical to the 24A446 wrapper (+0xe7ec); the 13432-only
 # iPhone17,2 patch is not used.
 "early_security_init" = "com.apple.driver.AppleMobileFileIntegrity=0xfffffff008edda30"
+# A RELEASE-LTO build of the same 12377 source gives the matcher symbol-bearing anchors. Without it
+# the first iOS 26 prelink left 1668 targets / 18367 sites; with it the local report dropped to
+# 93 targets / 769 sites (the iOS 27 reference, not yet the exact 26 tree).
+"extra_args" = ["--fileset-reference", "build/xnu/fileset-reference/mach.release.bcm2837.unstripped.noctf"]
 # The iPhone17,2 fileset has every root of the 23F84 build except com.apple.iokit.IOHIDEventDriver; the
-# class ships in IOHIDFamily. No --allow-missing: the source matches the kernel, so the matcher must pair
-# every target or fail loudly.
+# class ships in IOHIDFamily. No --allow-missing yet: the exact reference should pair the kernel
+# functions, and any remaining target is a real finding.
 "roots" = ["com.apple.AppleFSCompression.AppleFSCompressionTypeZlib", "com.apple.driver.AppleARMPlatform", "com.apple.driver.AppleARMWatchdogTimer", "com.apple.driver.AppleAudioClockLibs", "com.apple.driver.AppleEffaceableStorage", "com.apple.driver.AppleIISController", "com.apple.driver.AppleM2ScalerCSCDriver", "com.apple.driver.AppleMobileFileIntegrity", "com.apple.driver.ApplePMGR", "com.apple.driver.IODARTFamily", "com.apple.filesystems.apfs", "com.apple.iokit.CoreAnalyticsFamily", "com.apple.iokit.IOAVFamily", "com.apple.iokit.IOAudio2Family", "com.apple.iokit.IOCECFamily", "com.apple.iokit.IOCryptoAcceleratorFamily", "com.apple.iokit.IOGPUFamily", "com.apple.iokit.IOHDCPFamily", "com.apple.iokit.IOMobileGraphicsFamily", "com.apple.iokit.IOReportFamily", "com.apple.iokit.IOSlowAdaptiveClockingFamily", "com.apple.iokit.IOStorageFamily", "com.apple.iokit.IOSurface", "com.apple.kec.Libm", "com.apple.kec.corecrypto", "com.apple.kext.AppleMatch", "com.apple.kext.CoreTrust", "com.apple.security.AppleImage4", "com.apple.security.sandbox", "com.apple.iokit.IOHIDFamily"]
 
 
