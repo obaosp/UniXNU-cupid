@@ -1,3 +1,14 @@
+> [!WARNING]
+> **Work in progress — this port does not boot yet.**
+>
+> iOS 27 on the Xiaomi 12 (`cupid`, SM8450) is under active development. It
+> currently stops in a kernel panic during early kext start. Build failures,
+> boot loops and kernel panics are expected while the port is unfinished.
+>
+> **Please do not open issues about build errors, boot loops or kernel panics
+> until this notice is removed.** The issue tracker is closed to those reports;
+> progress is tracked in `STATE.md`, `NEXT.md` and the build notes.
+
 # UniXNU cupid — iOS 27 on the Xiaomi 12
 
 Bring-up of **iOS 27.0.1 (24A446, arm64e)** on the **Xiaomi 12** (`cupid`,

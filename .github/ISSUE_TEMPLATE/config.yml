@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Work in progress — do not report build failures or kernel panics
+    url: https://github.com/obaosp/UniXNU-cupid/blob/main/README.md
+    about: This project is unfinished and panics by design during bring-up. Read the notice before opening anything.
