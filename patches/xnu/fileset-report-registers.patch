@@ -1,6 +1,6 @@
 --- a/osfmk/kern/debug.c
 +++ b/osfmk/kern/debug.c
-@@ -2578,14 +2578,137 @@
+@@ -2578,14 +2578,149 @@
  }
  #endif /* __arm64__ */
  
@@ -46,12 +46,10 @@
 +
 +static inline boolean_t
 +unixnu_data_candidate(uint64_t value)
- {
--	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
--	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
++{
 +	return (value >= 0xfffffff007dd0000ULL && value < 0xfffffff0083ec000ULL) ||
 +	       (value >= 0xfffffff00b6b0000ULL && value < 0xfffffff00b9a0000ULL);
- }
++}
 +
 +__attribute__((used, noreturn))
 +void
@@ -93,9 +91,11 @@
 +__attribute__((used))
 +uint32_t
 +unixnu_apple_m2_clock_state(void)
-+{
+ {
+-	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
+-	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
 +	return 0;
-+}
+ }
 +
 +/*
 + * AppleM2ScalerCSCDriver's 13432 property helper zeroes a caller buffer, looks up a string
@@ -133,11 +133,23 @@
 +	}
 +}
 +
++/*
++ * The two AppleImage4/Image4 gate lock/unlock bodies are 13432-specific and
++ * operate on the original lck_mtx_gate struct. The rest of the gate family is
++ * bound to the native implementation; a no-op lock/unlock keeps early boot
++ * single-threaded and avoids the unmapped stub. This is a bring-up
++ * workaround; port the real owner/state manipulation if contention appears.
++ */
++__attribute__((used))
++void
++unixnu_apple_image4_gate_noop(void *gate)
++{
++	(void)gate;
++}
++
 +#define UNIXNU_PROBE(name, value) \
 +	__attribute__((used, noreturn)) void name(void) { panic("unixnu probe: " value); }
 +
-+UNIXNU_PROBE(unixnu_probe_image4_0, "AppleImage4 0xfffffff00abde90c")
-+UNIXNU_PROBE(unixnu_probe_image4_1, "AppleImage4 0xfffffff00abdea40")
 +UNIXNU_PROBE(unixnu_probe_image4_2, "AppleImage4 0xfffffff00b0de25c")
 +UNIXNU_PROBE(unixnu_probe_image4_3, "AppleImage4 0xfffffff00b0fca08")
 +UNIXNU_PROBE(unixnu_probe_image4_5, "AppleImage4 0xfffffff00b4182c8")

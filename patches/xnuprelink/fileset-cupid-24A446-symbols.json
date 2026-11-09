@@ -99,15 +99,15 @@
       "original": "0xfffffff00abde90c",
       "original_size": 308,
       "original_sha256": "55e1b5e554730bab36213059f1bc00730d7fd682b6bf63a66b1f6774d4d47e78",
-      "native_symbol": "_unixnu_probe_image4_0",
-      "evidence": "Diagnostic probe: the post-AppleM2 fileset panic still names an unmapped target, and AppleImage4 has six stubbed imports. The target body is pinned by raw-byte sha256 and bound to a probe that panics with its address, so the next boot names the exact target. Replace the probe with a reviewed binding once identified."
+      "native_symbol": "_unixnu_apple_image4_gate_noop",
+      "evidence": "AppleImage4/Image4 gate lock/unlock body (casa owner/state with magic 0x37ab6fbbf7ab6fbb). It is 13432-specific and accesses the original gate struct; the XnuPrelink map has no native pair. The rest of the lck_mtx_gate family is bound to the native implementation. A no-op lock/unlock is a bring-up workaround for early single-threaded start; port the real owner/state manipulation if contention or gate state errors appear."
     },
     {
       "original": "0xfffffff00abdea40",
       "original_size": 284,
       "original_sha256": "5af2096f4fcf9199049a7b876853b33d34e8b8e26d65fe5f492646bb77b8aa73",
-      "native_symbol": "_unixnu_probe_image4_1",
-      "evidence": "Diagnostic probe: the post-AppleM2 fileset panic still names an unmapped target, and AppleImage4 has six stubbed imports. The target body is pinned by raw-byte sha256 and bound to a probe that panics with its address, so the next boot names the exact target. Replace the probe with a reviewed binding once identified."
+      "native_symbol": "_unixnu_apple_image4_gate_noop",
+      "evidence": "AppleImage4/Image4 gate lock/unlock body (casa owner/state with magic 0x37ab6fbbf7ab6fbb). It is 13432-specific and accesses the original gate struct; the XnuPrelink map has no native pair. The rest of the lck_mtx_gate family is bound to the native implementation. A no-op lock/unlock is a bring-up workaround for early single-threaded start; port the real owner/state manipulation if contention or gate state errors appear."
     },
     {
       "original": "0xfffffff00b0de25c",
