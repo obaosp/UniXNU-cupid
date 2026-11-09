@@ -1,6 +1,6 @@
 --- a/osfmk/kern/debug.c
 +++ b/osfmk/kern/debug.c
-@@ -2578,14 +2578,191 @@
+@@ -2578,14 +2578,204 @@
  }
  #endif /* __arm64__ */
  
@@ -12,9 +12,11 @@
 + * redirects them here). A caller may reach this symbol through a tail branch, so x30 can hold a
 + * stale data pointer instead of the call site. Save the raw registers and let the report name the
 + * import stub (x16) and the PAC modifier (x17) as well as the raw and stripped x30.
-+ */
+  */
+-__attribute__((noinline, noreturn, used))
 +__attribute__((naked, noreturn, used))
-+void
+ void
+-unixnu_fileset_unmapped(uint64_t arg0, uint64_t arg1)
 +unixnu_fileset_unmapped(void)
 +{
 +	__asm__ volatile(
@@ -44,10 +46,12 @@
 +
 +static inline boolean_t
 +unixnu_data_candidate(uint64_t value)
-+{
+ {
+-	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
+-	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
 +	return (value >= 0xfffffff007dd0000ULL && value < 0xfffffff0083ec000ULL) ||
 +	       (value >= 0xfffffff00b6b0000ULL && value < 0xfffffff00b9a0000ULL);
-+}
+ }
 +
 +__attribute__((used, noreturn))
 +void
@@ -116,22 +120,18 @@
 + * status and an empty flag word. Image4's callers treat non-zero status as
 + * "initialized"; the AppleImage4 wrappers that compare against 1 take their
 + * cached-status path.
-  */
--__attribute__((noinline, noreturn, used))
++ */
 +__attribute__((used))
- void
--unixnu_fileset_unmapped(uint64_t arg0, uint64_t arg1)
++void
 +unixnu_apple_image4_flags(uint32_t *status, uint32_t *flags)
- {
--	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
--	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
++{
 +	if (status != NULL) {
 +		*status = 2;
 +	}
 +	if (flags != NULL) {
 +		*flags = 0;
 +	}
- }
++}
 +
 +/*
 + * The two AppleImage4/Image4 gate lock/unlock bodies are 13432-specific and
@@ -187,6 +187,19 @@
 +unixnu_armplatform_lookup_miss(void)
 +{
 +	return 0xffffffffu;
++}
++
++/*
++ * AMFI calls a 13432 kernel crypto/DRBG parameter initializer (0xb11ab54)
++ * that builds a local ccdrbg_info at +0x10 and calls 0xb11bfe0 with it. The
++ * callee and the globals are overwritten by the native placement, and the
++ * caller ignores the wrapper's return. A no-op keeps AMFI off the unmapped
++ * stub; revisit if the following generate call reports an RNG failure.
++ */
++__attribute__((used))
++void
++unixnu_amfi_crypto_init_noop(void)
++{
 +}
 +
 +#define UNIXNU_PROBE(name, value) \

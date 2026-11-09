@@ -206,6 +206,13 @@
       "original_sha256": "e443447b1594d6a28695577bbfe5bd7c80998c8191d41f7b53fa009fe88a0342",
       "native_symbol": "_unixnu_armplatform_lookup_miss",
       "evidence": "AppleARMPlatform table lookup: reads the original count at 0x7e1125c and scans 0x18? entries at 0x7e11278, returning the matching index or -1. The native placement overwrote the table. The caller at 0x85f6ca0 tests bit 31 of the result and branches to its missing-platform-data path, so the shim returns -1 (not found)."
+    },
+    {
+      "original": "0xfffffff00b11ab54",
+      "original_size": 80,
+      "original_sha256": "d27c55cfb2a2a3dc6ed38e2d3b4e13fd8192ec88e266e9f7ba9379eb8bdaf583",
+      "native_symbol": "_unixnu_amfi_crypto_init_noop",
+      "evidence": "AMFI imports this 13432 kernel crypto parameter initializer: it builds a local ccdrbg_info/params block at sp+0x10 (0x1f, 1, 1) and calls 0xb11bfe0, which touches overwritten globals at 0xb8346c8/6d0/6d8. The AMFI caller ignores the wrapper's return and then calls 0x921a200. No native pair; a no-op is a bring-up shim, revisit if the following generate reports an RNG failure."
     }
   ],
   "data": [],
