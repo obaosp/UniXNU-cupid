@@ -1,5 +1,9 @@
 # NEXT — active queue
 
+> **Superseded (2026-11-09):** this is the iOS 27 pre-pivot queue. The current
+> queue is `NEXT.md` in the workspace root; the port now targets **iOS 26.5.2
+> (23F84)**.
+
 1. Build `42408717308` (device `a21ef96`, uefi-cupid `2629889`):
    high DRAM as conventional + `owned_memory_size=0x80000000` + DarwinBoot
    console diagnostics. On completion:
