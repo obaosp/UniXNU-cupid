@@ -152,9 +152,13 @@ commit = "1f4f5265b319111142f1bf3a27d4484ef5a98314"
 windows = [{ name = "OS", component = "OS" }, { name = "SystemOS", component = "Cryptex1,SystemOS", optional = true }]
 
 [root]
-# Pending: the iPhone17,2 26.5.2 OS and Cryptex1,SystemOS APFS volume UUIDs and raw image sha256 values
-# need macOS /usr/bin/aea plus `ipsw fw aea --key`. They are not needed for the kernel bring-up; fill them
-# (and [payload.adt] root_match_volume_uuid) before the storage/root milestone.
+# Decrypted iPhone17,2 26.5.2 images (OS = 094-54688-107.dmg.aea,
+# Cryptex1,SystemOS = 094-54806-109.dmg.aea): raw APFS containers without a
+# partition map, so the .dmg sha256 is the raw disk digest the root policies sign.
+os_volume_uuid = "1A2E284A-0A7E-40A9-8F5D-35A1C1F44E9E"
+os_image_sha256 = "14b119c0d44826e080c9cd61f3f5cf9ff7449d990b1f5e0dfb4b93fc3a29d58b"
+systemos_volume_uuid = "21AAD942-A60B-4026-B7B4-0A57205CC9A9"
+systemos_image_sha256 = "7e992fd0fde7339a45607b511f4c024641f71095c6730de0a1c9f47b3970df56"
 
 [payload.adt]
-# root_match_volume_uuid is filled with [root] once the iPhone 26 images are decrypted.
+root_match_volume_uuid = "1A2E284A-0A7E-40A9-8F5D-35A1C1F44E9E"
