@@ -177,15 +177,15 @@ jobs:
           fi
 
       - name: Upload the native symbols
-        if: always() && steps.kernel.outcome == 'success'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cupid-native-symbols
           path: |
             UniXNU/out/cupid/*/*/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf
             UniXNU/out/cupid/*/*/tree/build/xnu/fileset-reference/mach.release.bcm2837.unstripped.noctf
-            UniXNU/out/cupid/*/*/kernel/kernel.json
-            UniXNU/out/cupid/*/*/kernel/kernel.map.json
+            UniXNU/out/cupid/*/*/kernel/*.json
+            UniXNU/out/cupid/*/*/logs/*.log
           if-no-files-found: warn
           retention-days: 7
 
@@ -259,6 +259,7 @@ jobs:
 
       - name: Collect text logs
         if: always() && steps.status.outcome == 'success'
+        working-directory: UniXNU
         run: |
           mkdir -p "$RUNNER_TEMP/logs"
           cp "$RUNNER_TEMP/status.json" "$RUNNER_TEMP/logs/" 2>/dev/null || true

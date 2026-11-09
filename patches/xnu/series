@@ -1,5 +1,5 @@
 # iOS 26 bring-up: the iPhone17,2 26.5.2 kernel is xnu-12377.122.8, the same major/minor as the
 # public 12377.121.6 source. Prelink against the real kernelcache must pair every target without the
 # 13432 shims; the 24A446 fixture and the two iOS 27-only patches are gone.
-disable-dtrace.patch
+disable-mach-assert.patch
 timers-avoid-trapped-physical-timer.patch
