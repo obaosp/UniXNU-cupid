@@ -2,8 +2,8 @@
 # Install this repository's OS profiles into a UniXNU checkout.
 #
 # UniXNU resolves profiles/os/<name> from its own tree, and main does not ship
-# an ios-27 profile yet. This repository is the source of truth for
-# profiles/os/ios-27.0.1-24A446; copy it before defconfig, fetch or build.
+# an ios-26 profile yet. This repository is the source of truth for
+# profiles/os/ios-26.5.2-23F84; copy it before defconfig, fetch or build.
 #
 # usage: scripts/install-os-profile.sh [UNIXNU_DIR]
 #        UNIXNU_DIR defaults to board.toml [package] unixnu (relative to here).

@@ -1,8 +1,8 @@
 name: macOS kernel build
 
-# Builds the arm64e iOS 27 XNU for cupid on a GitHub macOS runner. This is the
+# Builds the arm64e iOS 26 XNU for cupid on a GitHub macOS runner. This is the
 # reproducible host check while the phone is not attached: it resolves the
-# iOS 27 profile, fetches the pinned sources, decodes the iPhone17,2 kernelcache
+# iOS 26 profile, fetches the pinned sources, decodes the iPhone17,2 kernelcache
 # and prelinks the kernel. It publishes text logs only (no Apple images).
 
 on:
@@ -116,7 +116,7 @@ jobs:
           done
           df -h "$GITHUB_WORKSPACE"
 
-      - name: Install the iOS 27 profile
+      - name: Install the iOS 26 profile
         working-directory: device
         run: scripts/install-os-profile.sh ../UniXNU
 
@@ -124,27 +124,31 @@ jobs:
         id: status
         working-directory: UniXNU
         run: |
-          ./unixnu defconfig cupid_ios27_defconfig -D ../device
+          ./unixnu defconfig cupid_ios26_defconfig -D ../device
           ./unixnu fetch -D ../device
           ./unixnu status --json -D ../device | tee "$RUNNER_TEMP/status.json"
           python3 - "$RUNNER_TEMP/status.json" <<'PY'
           import json, sys
           status = json.load(open(sys.argv[1]))
           text = json.dumps(status)
-          for needle in ("ios-27.0.1-24A446", "arm64e", "sm8450", "cupid_ios27"):
+          for needle in ("ios-26.5.2-23F84", "arm64e", "sm8450", "cupid_ios26"):
               if needle not in text:
                   sys.exit(f"::error::resolved status is missing {needle}")
-          print("status resolves the iOS 27 arm64e profile, the sm8450 source and the cupid defconfig")
+          print("status resolves the iOS 26 arm64e profile, the sm8450 source and the cupid defconfig")
           PY
 
       - name: Install the XnuPrelink reviewed symbols
         working-directory: UniXNU
         run: |
+          shopt -s nullglob
+          fixtures=(../device/patches/xnuprelink/fileset-cupid-*.json)
+          if [ ${#fixtures[@]} -eq 0 ]; then
+            echo "no reviewed symbol fixture; the source/kernel shapes must pair every target"
+            exit 0
+          fi
           test -d kits/XnuPrelink/fixtures
-          install -m 0644 \
-            ../device/patches/xnuprelink/fileset-cupid-24A446-symbols.json \
-            kits/XnuPrelink/fixtures/fileset-cupid-24A446-symbols.json
-          python3 -c 'import json,sys; d=json.load(open("kits/XnuPrelink/fixtures/fileset-cupid-24A446-symbols.json")); print("reviewed functions:", len(d["functions"]), "kernelcache:", d["inputs"]["kernelcache_sha256"])'
+          install -m 0644 "${fixtures[@]}" kits/XnuPrelink/fixtures/
+          python3 -c 'import glob,json; [print("reviewed functions:", len(d["functions"]), "kernelcache:", d["inputs"]["kernelcache_sha256"]) for p in glob.glob("kits/XnuPrelink/fixtures/fileset-cupid-*.json") for d in [json.load(open(p))]]'
 
       - name: Build the cupid device tree
         id: dtb
@@ -185,7 +189,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Kernel panic diagnostics
+      - name: Kernel diagnostics
         if: always()
         working-directory: UniXNU
         run: |
@@ -196,19 +200,10 @@ jobs:
             echo "kernel: $K"
             echo "bytes: $(wc -c < "$K")"
             llvm-nm -n "$K" > "$RUNNER_TEMP/syms.txt" 2>/dev/null || true
-            PC=0xfffffff00ad881c0
-            python3 - "$PC" "$RUNNER_TEMP/syms.txt" <<'PY2'
-          import sys
-          pc=int(sys.argv[1],16); best=None
-          for line in open(sys.argv[2]):
-              p=line.split()
-              if len(p)>=3:
-                  try: a=int(p[0],16)
-                  except ValueError: continue
-                  if a<=pc and (best is None or a>best[0]): best=(a,p[2])
-          print("nearest:", hex(best[0]), best[1], "offset", hex(pc-best[0]) if best else "?")
-          PY2
-            llvm-objdump -d --start-address=0xfffffff00ad88160 --stop-address=0xfffffff00ad88220 "$K" | tail -50
+            echo "== segments"
+            llvm-objdump --macho --private-headers "$K" 2>/dev/null | sed -n '1,90p'
+            echo "== prelink counts"
+            find out/cupid -name 'kernel.json' -exec python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(sys.argv[1], "stubbed", sum(len(v) for v in d.get("stubbed", {}).values()), "missing", sum(len(v) for v in d.get("missing", {}).values()))' {} \;
           } > "$RUNNER_TEMP/kernel-diag.txt" 2>&1
           cat "$RUNNER_TEMP/kernel-diag.txt"
 
@@ -275,7 +270,7 @@ jobs:
         if: always() && steps.status.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: cupid-ios27-kernel-logs
+          name: cupid-ios26-kernel-logs
           path: ${{ runner.temp }}/logs/*
           if-no-files-found: warn
           retention-days: 7
@@ -290,7 +285,7 @@ jobs:
           KERNEL: ${{ steps.kernel.outcome }}
         run: |
           {
-            echo "## cupid / iOS 27.0.1 (24A446, arm64e)"
+            echo "## cupid / iOS 26.5.2 (23F84, arm64e)"
             echo
             echo "| Step | Result |"
             echo "| --- | --- |"

@@ -1,7 +1,7 @@
 > [!WARNING]
 > **Work in progress — this port does not boot yet.**
 >
-> iOS 27 on the Xiaomi 12 (`cupid`, SM8450) is under active development. It
+> iOS 26 on the Xiaomi 12 (`cupid`, SM8450) is under active development. It
 > currently stops in a kernel panic during early kext start. Build failures,
 > boot loops and kernel panics are expected while the port is unfinished.
 >
@@ -9,15 +9,15 @@
 > until this notice is removed.** The issue tracker is closed to those reports;
 > progress is tracked in `STATE.md`, `NEXT.md` and the build notes.
 
-# UniXNU cupid — iOS 27 on the Xiaomi 12
+# UniXNU cupid — iOS 26 on the Xiaomi 12
 
-Bring-up of **iOS 27.0.1 (24A446, arm64e)** on the **Xiaomi 12** (`cupid`,
+Bring-up of **iOS 26.5.2 (23F84, arm64e)** on the **Xiaomi 12** (`cupid`,
 Qualcomm **SM8450**), presented to iOS as an **iPhone 16 Pro Max**
 (`iPhone17,2`, `D94AP`).
 
 This is a phone port, so it uses an **iPhone-flavoured** OS profile. It does
-**not** boot the iPadOS 27 profile that ships in UniXNU main: same build and XNU
-source, different IPSW, original kexts and product identity.
+**not** boot the iPadOS 26 profile that ships in UniXNU main: different IPSW,
+original kexts and product identity.
 
 ## Hardware
 
@@ -41,24 +41,25 @@ Sources: mainline Linux `sm8450.dtsi` at
 
 | Path | Contents |
 | --- | --- |
-| `board.toml` | Format 2 board: SM8450 source, iOS 27 profile, stage-0 components |
-| `profiles/os/ios-27.0.1-24A446/` | The iPhone17,2 iOS 27 profile UniXNU main does not ship |
-| `configs/cupid_ios27_defconfig` | Stage-0 kernel configuration |
+| `board.toml` | Format 2 board: SM8450 source, iOS 26 profile, stage-0 components |
+| `profiles/os/ios-26.5.2-23F84/` | The iPhone17,2 iOS 26 profile UniXNU main does not ship |
+| `configs/cupid_ios26_defconfig` | Stage-0 kernel configuration |
 | `dts/cupid.dts` | Memory, splash, CPU clusters; peripherals as they are enabled |
 | `feeds.toml` | Pinned [`UniXNU-sm8450-common`](https://github.com/obaosp/UniXNU-sm8450-common) source |
 | `porting.toml` | Per-area inputs, findings, limits and next action |
-| `scripts/install-os-profile.sh` | Copies the iOS 27 profile into a UniXNU checkout |
+| `scripts/install-os-profile.sh` | Copies the iOS 26 profile into a UniXNU checkout |
 | `scripts/package.sh` | Standard UniXNU packaging script (do not edit) |
 
 ## Why a shipped profile
 
 UniXNU resolves `profiles/os/<name>` from its own checkout and main has only
-`ipados-17.7.11`, `ipados-26.5.2` and `ipados-27.0.1`. The iOS 27 profile here is
-reconstructed from the published UniXNU-ishtar patches (0001/0002/0005):
-iPhone17,2 IPSW pins, the masked-code-verified AMFI early-init address
-`0xfffffff00921000c`, the iPhone prelink roots (no `IOHIDEventDriver` bundle),
-OS/SystemOS image digests and volume UUIDs, and `abi/original-classes.json`.
-`scripts/install-os-profile.sh` installs it before `defconfig`.
+`ipados-17.7.11`, `ipados-26.5.2` and `ipados-27.0.1`. The iPhone 26 profile
+here is built from the iPhone17,2 26.5.2 kernelcache (302 fileset entries,
+`xnu-12377.122.8~1`) and the matching `xnu-12377.121.6` source: iPhone17,2 IPSW
+pins, the AMFI early-init wrapper `0xfffffff008edda30`, and the iPhone prelink
+roots (no `IOHIDEventDriver` bundle). The OS/SystemOS image digests and volume
+UUIDs still need a macOS AEA pass. `scripts/install-os-profile.sh` installs the
+profile before `defconfig`.
 
 ## Build (host)
 
@@ -66,7 +67,7 @@ OS/SystemOS image digests and volume UUIDs, and `abi/original-classes.json`.
 git clone https://github.com/UniXNU/UniXNU ../UniXNU
 scripts/install-os-profile.sh ../UniXNU
 cd ../UniXNU
-./unixnu defconfig cupid_ios27_defconfig -D ../UniXNU-cupid
+./unixnu defconfig cupid_ios26_defconfig -D ../UniXNU-cupid
 ./unixnu fetch -D ../UniXNU-cupid
 ./unixnu status --json -D ../UniXNU-cupid
 ./unixnu build kernel -D ../UniXNU-cupid      # Xcode + iphoneos SDK
@@ -76,7 +77,7 @@ Full images need `uefi-cupid` (not published yet), the platform seed
 `UNIXNU_UNIQUE_CHIP_ID` and a Data seed:
 
 ```sh
-scripts/package.sh --os 27 --uefi ../uefi-cupid
+scripts/package.sh --os ios-26.5.2-23F84 --uefi ../uefi-cupid
 ```
 
 ## CI

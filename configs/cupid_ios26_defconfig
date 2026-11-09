@@ -1,6 +1,6 @@
-# Stage 0 (iOS 27 bring-up): arm64e kernel, owner storage chain later.
+# Stage 0 (iOS 26 bring-up): arm64e kernel, owner storage chain later.
 # Display and GPU stay off until their iPhone17,2 / Adreno 730 ABI inputs exist:
-# CONFIG_XNU_NATIVE_LEGACY_DISPLAY needs a 24A446 d94ap display record and
+# CONFIG_XNU_NATIVE_LEGACY_DISPLAY needs a 23F84 d94ap display record and
 # CONFIG_XNU_NATIVE_ADRENO is the Adreno 740 driver, not the 730 this SoC has.
 CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_CRYPTO_BOOTSTRAP="source"

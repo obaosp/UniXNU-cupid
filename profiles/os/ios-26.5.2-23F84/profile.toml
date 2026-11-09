@@ -1,25 +1,24 @@
 ["os"]
-"name" = "ios-27.0.1-24A446"
+"name" = "ios-26.5.2-23F84"
 "arch" = "arm64e"
 "darwin" = "25.5.0"
-# Same build as ipados-27.0.1-24A446: every iOS 27.0.1 iPhone and iPad ships 24A446, so the kernel source, the Darwin 26
-# system-call patches and the OS patch series are shared. Only the IPSW, the original kexts and the identity differ.
-# The iPhone17,2 kernelcache reports xnu-13432.2.10~2/RELEASE_ARM64_T8140 (Darwin 27.0.0); 12377.121.6 is the newest
-# public source, as for the iPad profile.
+# iPhone17,2 26.5.2 ships kernelcache xnu-12377.122.8~1/RELEASE_ARM64_T8140 (Darwin 25.5.0). The newest
+# public source is xnu-12377.121.6: the same major/minor as the kernel, which is why this profile runs the
+# 12377 source without the Darwin 26 syscall/KPI additions that 24A446 needs.
 "xnu_version" = "12377.121.6"
 "xnu_revision" = "ac9718fb1af618d5ce8678d0dc6e8a58f252216f"
 "driverkit_tag" = "xnu-12377.121.6"
 "trustcache_tag" = "xnu-8796.101.5"
-"ios_version" = "27.0"
+"ios_version" = "26.0"
 "abi" = []
 
 
 ["ipsw"]
-# iPhone 16 Pro Max. 12314041166 bytes, IPSW sha256 2b846dfd495f17eb074dacc6d892529df7f18587afdf930645747cd42286f538 (ipsw.me).
-"url" = "https://updates.cdn-apple.com/2026FallFCS/3741bcd4-e0a6-43a7-bac1-74f363efb9ab/iPhone17,2_27.0.1_24A446_Restore.ipsw"
+# iPhone 16 Pro Max. kernelcache.release.iphone17 decompresses to a 302-entry arm64e MH_FILESET.
+"url" = "https://updates.cdn-apple.com/2026SpringFCS/fullrestores/140-26194/0358D1F3-1C15-44F7-A711-93D2987CA188/iPhone17,2_26.5.2_23F84_Restore.ipsw"
 "product" = "iPhone17,2"
-"version" = "27.0.1"
-"build" = "24A446"
+"version" = "26.5.2"
+"build" = "23F84"
 "device_class" = "d94ap"
 "chip_id" = 33088
 "board_id" = 14
@@ -31,15 +30,16 @@
 ["kernel"."prelink"]
 "tool" = "kits/XnuPrelink/emit_prelink.py"
 "kernel" = "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
-# sha256 of the decompressed arm64e Mach-O (kernelcache.release.iphone17, MH_FILESET, 305 entries).
-"kernelcache_sha256" = "fa07057bf34f33af1ec26681ad0c87c13e5aaa548a300740eddb0e92876e5f95"
+# sha256 of the decompressed arm64e Mach-O (kernelcache.release.iphone17, MH_FILESET, 302 entries).
+"kernelcache_sha256" = "2276364d028954a1152e721820f243f9400ce5d4b13c6d57f021f010afd1eabf"
 "slide" = "-0x1000000"
-# The AMFI wrapper that calls _initializeAppleMobileFileIntegrity and returns 0: iPad17,3 0xfffffe00092551ac ported to
-# this kernelcache (AppleMobileFileIntegrity __TEXT_EXEC+0xe7ec, masked code verified; UniXNU-ishtar scripts/kc-port.py).
-"early_security_init" = "com.apple.driver.AppleMobileFileIntegrity=0xfffffff00921000c"
-"extra_args" = ["--fileset-reference", "build/xnu/fileset-reference/mach.release.bcm2837.unstripped.noctf", "--allow-missing"]
-# The iPad roots minus com.apple.iokit.IOHIDEventDriver, which the iPhone17,2 fileset does not have (the class itself
-# ships in IOHIDFamily). Every other root is present.
+# AppleMobileFileIntegrity __TEXT_EXEC+0xdee0: the wrapper that calls the original AMFI initializer at
+# +0xd750 and returns 0. Structurally identical to the 24A446 wrapper (+0xe7ec); the 13432-only
+# iPhone17,2 patch is not used.
+"early_security_init" = "com.apple.driver.AppleMobileFileIntegrity=0xfffffff008edda30"
+# The iPhone17,2 fileset has every root of the 23F84 build except com.apple.iokit.IOHIDEventDriver; the
+# class ships in IOHIDFamily. No --allow-missing: the source matches the kernel, so the matcher must pair
+# every target or fail loudly.
 "roots" = ["com.apple.AppleFSCompression.AppleFSCompressionTypeZlib", "com.apple.driver.AppleARMPlatform", "com.apple.driver.AppleARMWatchdogTimer", "com.apple.driver.AppleAudioClockLibs", "com.apple.driver.AppleEffaceableStorage", "com.apple.driver.AppleIISController", "com.apple.driver.AppleM2ScalerCSCDriver", "com.apple.driver.AppleMobileFileIntegrity", "com.apple.driver.ApplePMGR", "com.apple.driver.IODARTFamily", "com.apple.filesystems.apfs", "com.apple.iokit.CoreAnalyticsFamily", "com.apple.iokit.IOAVFamily", "com.apple.iokit.IOAudio2Family", "com.apple.iokit.IOCECFamily", "com.apple.iokit.IOCryptoAcceleratorFamily", "com.apple.iokit.IOGPUFamily", "com.apple.iokit.IOHDCPFamily", "com.apple.iokit.IOMobileGraphicsFamily", "com.apple.iokit.IOReportFamily", "com.apple.iokit.IOSlowAdaptiveClockingFamily", "com.apple.iokit.IOStorageFamily", "com.apple.iokit.IOSurface", "com.apple.kec.Libm", "com.apple.kec.corecrypto", "com.apple.kext.AppleMatch", "com.apple.kext.CoreTrust", "com.apple.security.AppleImage4", "com.apple.security.sandbox", "com.apple.iokit.IOHIDFamily"]
 
 
@@ -105,7 +105,7 @@
 "display-corner-radius" = "3e00000001000000"
 
 
-# Apple sources of the macOS 26.5 release that pairs with xnu-12377.121.6 (same pins as ipados-27.0.1-24A446).
+# Apple sources of the macOS 26.5 release that pairs with xnu-12377.121.6.
 [[source]]
 name = "IOStorageFamily"
 kind = "refer"
@@ -152,12 +152,9 @@ commit = "1f4f5265b319111142f1bf3a27d4484ef5a98314"
 windows = [{ name = "OS", component = "OS" }, { name = "SystemOS", component = "Cryptex1,SystemOS", optional = true }]
 
 [root]
-# The decrypted iPhone17,2 images (OS = 043-69909-664.dmg.aea, Cryptex1,SystemOS = 043-68526-711.dmg.aea): raw APFS
-# containers without a partition map, so the .dmg sha256 is the raw disk digest the root policies sign.
-os_volume_uuid = "E3F4AED0-4454-4D5B-833C-E27E99C4F67B"
-os_image_sha256 = "4b8719fe44a2b80cba9e108ebcec91b6b8a03a3c3ffe353befce3b100f2e6f25"
-systemos_volume_uuid = "8B599D21-9ABD-4050-8BA2-C61349890BED"
-systemos_image_sha256 = "f6d10101770604271c332d27290a48558ceb34f041c4020aae07ee6ca80dbb1b"
+# Pending: the iPhone17,2 26.5.2 OS and Cryptex1,SystemOS APFS volume UUIDs and raw image sha256 values
+# need macOS /usr/bin/aea plus `ipsw fw aea --key`. They are not needed for the kernel bring-up; fill them
+# (and [payload.adt] root_match_volume_uuid) before the storage/root milestone.
 
 [payload.adt]
-root_match_volume_uuid = "E3F4AED0-4454-4D5B-833C-E27E99C4F67B"
+# root_match_volume_uuid is filled with [root] once the iPhone 26 images are decrypted.
