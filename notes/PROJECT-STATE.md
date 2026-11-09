@@ -1,5 +1,11 @@
 # PROJECT STATE — UniXNU cupid (read this first)
 
+> **Superseded (2026-11-09):** this is the iOS 27 pre-pivot snapshot. The
+> authoritative state is `STATE.md` / `NEXT.md` in the workspace root. The port
+> now targets **iOS 26.5.2 (23F84)** with
+> `profiles/os/ios-26.5.2-23F84`; the 24A446 profile, its reviewed-symbol
+> fixture and the PAC/probe patches were removed.
+
 Last updated: 2026-11-07, after build `42408717308` was dispatched.
 
 ## Goal

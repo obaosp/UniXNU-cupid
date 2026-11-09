@@ -110,6 +110,13 @@ def main():
         entry['diskutil'] = attach_volumes(image)
         result[component] = entry
         print(json.dumps({component: entry}, indent=2), flush=True)
+        # A macOS runner has little free space: drop the decrypted image, the
+        # AEA archive and their records before the next component.
+        archive = image.with_suffix(image.suffix + '.aea')
+        for path in (image, archive,
+                     image.with_suffix(image.suffix + '.json'),
+                     archive.with_suffix(archive.suffix + '.json')):
+            path.unlink(missing_ok=True)
     print('ROOTS_JSON: ' + json.dumps(result, separators=(',', ':')))
 
 
