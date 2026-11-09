@@ -1,6 +1,6 @@
 --- a/osfmk/kern/debug.c
 +++ b/osfmk/kern/debug.c
-@@ -2578,14 +2578,163 @@
+@@ -2578,14 +2578,178 @@
  }
  #endif /* __arm64__ */
  
@@ -97,8 +97,7 @@
 + * AppleM2ScalerCSCDriver's 13432 property helper zeroes a caller buffer, looks up a string
 + * property by key and copies it. The 12377 kernel has no equivalent. Zero a valid buffer and
 + * report "absent" so the driver takes its no-property path instead of the unmapped stub.
-  */
--__attribute__((noinline, noreturn, used))
++ */
 +__attribute__((used))
 +void *
 +unixnu_apple_m2_property(void *key __unused, void *buffer, uint32_t size)
@@ -136,14 +135,17 @@
 + * bound to the native implementation; a no-op lock/unlock keeps early boot
 + * single-threaded and avoids the unmapped stub. This is a bring-up
 + * workaround; port the real owner/state manipulation if contention appears.
-+ */
+  */
+-__attribute__((noinline, noreturn, used))
 +__attribute__((used))
  void
 -unixnu_fileset_unmapped(uint64_t arg0, uint64_t arg1)
 +unixnu_apple_image4_gate_noop(void *gate)
-+{
+ {
+-	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
+-	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
 +	(void)gate;
-+}
+ }
 +
 +/*
 + * Sandbox's 13432 kalloc-type alignment mask helper reads a shift from the
@@ -154,12 +156,25 @@
 +__attribute__((used))
 +uint32_t
 +unixnu_sandbox_kalloc_mask(void *view)
- {
--	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
--	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
++{
 +	(void)view;
 +	return 0x3fffu;
- }
++}
++
++/*
++ * Sandbox import 0xac48238 is a 13432 validation check over original pmap/VM
++ * tables at 0x7de5.../0x7deb...; the native placement overwrote those tables.
++ * It has no writes and only panics on mismatch, so a no-op keeps the check
++ * from firing during bring-up.
++ */
++__attribute__((used))
++void
++unixnu_check_noop(void *a, void *b, void *c)
++{
++	(void)a;
++	(void)b;
++	(void)c;
++}
 +
 +#define UNIXNU_PROBE(name, value) \
 +	__attribute__((used, noreturn)) void name(void) { panic("unixnu probe: " value); }

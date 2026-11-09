@@ -185,6 +185,13 @@
       "original_sha256": "2f6fec562b8d4b942dbabb093a78571b830b4bdf3e9034964852bb7ddac7fbe5",
       "native_symbol": "_unixnu_sandbox_kalloc_mask",
       "evidence": "Sandbox import: bti c; cbz x0; ldrb w8,[x0,#0x2c]; (else w8=14); lsl w8,#-1; mvn w0,w8; ret. It returns (1<<shift)-1, an alignment mask from the kalloc_type view. The emitted native __DATA_CONST placement overwrites the view (target 0x7e87c58 is native data), and no 12377 equivalent was paired. The device shim returns the original fallback mask 0x3fff (16 KiB); this is a bring-up workaround, revisit if sandbox reports a size/alignment fault."
+    },
+    {
+      "original": "0xfffffff00ac48238",
+      "original_size": 128,
+      "original_sha256": "8d3c95deebf0774c9957f793e211f69002884b2dfa997461ae3a61b3947d3c72",
+      "native_symbol": "_unixnu_check_noop",
+      "evidence": "Sandbox callback target: validates an index against original pmap/VM tables at 0x7de5e30/0x7de5e90/0x7debdd0, multiplies by (0x4000 - (x2 & 0x3fff)), and calls 0xb411164 only on mismatch. The tables are overwritten by the native __DATA_CONST placement and no 12377 equivalent was paired. It has no writes, so a no-op is a safe bring-up shim; revisit if a real pmap consistency failure is suspected."
     }
   ],
   "data": [],
