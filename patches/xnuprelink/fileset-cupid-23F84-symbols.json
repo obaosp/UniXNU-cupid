@@ -45,6 +45,20 @@
       "original_sha256": "0ba4931385884ca834b980bd0ef4078c56bbe269e87ad489889fa5148d57a6ad",
       "native_symbol": "_vnode_getwithref",
       "evidence": "The original calls the paired _vnode_getwithref_noblock; native _vnode_getwithref is the public wrapper (its own body calls vnode_getiocount in this source revision). sandbox imports it for 5 sites."
+    },
+    {
+      "original": "0xfffffff00a8293ac",
+      "original_size": 8,
+      "original_sha256": "9c01496cb2ebace194de9f020b6865e662157f70002c2aa443473f1c319108f7",
+      "native_symbol": "_ml_set_interrupts_enabled_with_debug",
+      "evidence": "An 8-byte bti c; b thunk whose only call is the paired 0xa82930c -> _ml_set_interrupts_enabled_with_debug. ApplePMGR imports it for 79 sites."
+    },
+    {
+      "original": "0xfffffff00a829678",
+      "original_size": 8,
+      "original_sha256": "ab34b3ae3066c1f1d7111ec8eaffcdf75dea01e12671153d62b8f9488a8edf0b",
+      "native_symbol": "_ml_set_interrupts_enabled_with_debug",
+      "evidence": "An 8-byte bti c; b thunk whose only call is the paired 0xa82930c -> _ml_set_interrupts_enabled_with_debug. ApplePMGR imports it for 59 sites."
     }
   ],
   "data": [],
