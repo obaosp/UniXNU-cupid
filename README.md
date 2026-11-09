@@ -19,6 +19,16 @@ This is a phone port, so it uses an **iPhone-flavoured** OS profile. It does
 **not** boot the iPadOS 26 profile that ships in UniXNU main: different IPSW,
 original kexts and product identity.
 
+## Why iOS 26, not iOS 27
+
+iOS 27.0.1 (24A446) reports `xnu-13432.2.10~2`, while the newest public XNU
+source is `12377.121.6`. That mismatch forced a large reviewed-symbol fixture
+(30 shims) and repeated early-kext panics. iOS 26.5.2 (23F84) reports
+`xnu-12377.122.8~1`, the same major/minor as the public source, so prelink
+pairs the real kernel natively: the exact source reference plus eight reviewed
+bindings leaves 72 stubbed targets in the local exact-pair run, and the
+remaining work is bring-up rather than chasing 13432-only functions.
+
 ## Hardware
 
 | Block | cupid |
@@ -56,10 +66,12 @@ UniXNU resolves `profiles/os/<name>` from its own checkout and main has only
 `ipados-17.7.11`, `ipados-26.5.2` and `ipados-27.0.1`. The iPhone 26 profile
 here is built from the iPhone17,2 26.5.2 kernelcache (302 fileset entries,
 `xnu-12377.122.8~1`) and the matching `xnu-12377.121.6` source: iPhone17,2 IPSW
-pins, the AMFI early-init wrapper `0xfffffff008edda30`, and the iPhone prelink
-roots (no `IOHIDEventDriver` bundle). The OS/SystemOS image digests and volume
-UUIDs still need a macOS AEA pass. `scripts/install-os-profile.sh` installs the
-profile before `defconfig`.
+pins, the AMFI early-init wrapper `0xfffffff008edda30`, the iPhone prelink roots
+(no `IOHIDEventDriver` bundle), and the OS/SystemOS volume UUIDs and image
+digests from the macOS AEA pass. A RELEASE-LTO build of the same source is the
+prelink reference, and `patches/xnuprelink/fileset-cupid-23F84-symbols.json`
+binds the eight functions the reference still cannot shape-match.
+`scripts/install-os-profile.sh` installs the profile before `defconfig`.
 
 ## Build (host)
 
@@ -84,15 +96,17 @@ scripts/package.sh --os ios-26.5.2-23F84 --uefi ../uefi-cupid
 
 `.github/workflows/macos.yml` runs resolve + `build kernel` + prelink on a
 `macos-26` runner and uploads text logs. It needs no firmware and no secrets.
-`.github/workflows/package.yml` is the full image build and fails fast with an
-explanation until `uefi-cupid` exists.
+The prelink builds the fileset reference, applies the reviewed fixture and
+publishes the stub/missing counts; `logs/*.log` and `kernel/*.json` are uploaded
+even when the kernel step fails. `.github/workflows/package.yml` is the full
+image build and still needs the platform seed and Data seed.
 
 ## Status
 
 | Area | State |
 | --- | --- |
 | Configuration, CPU/interrupts | `implemented` (host) |
-| Kernel build + prelink | CI job in this repository |
+| Kernel build + prelink | CI job; local prelink candidate with the iPhone 26 reference and 8 reviewed bindings (72 stubs) |
 | Firmware, storage, display, input, GPU, network, audio, power | `planned` |
 
 Device-side work is blocked on the phone: the build host has no `adb`,
