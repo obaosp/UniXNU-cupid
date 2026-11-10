@@ -33,6 +33,7 @@ jobs:
       - name: Install tools
         run: |
           brew install blacktop/tap/ipsw llvm
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
           for tool in aea ipsw hdiutil diskutil llvm-nm llvm-objdump; do
             command -v "$tool" || { echo "missing $tool"; exit 1; }
