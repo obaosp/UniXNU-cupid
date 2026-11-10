@@ -113,8 +113,8 @@
       "original": "0xfffffff00a6d3360",
       "original_size": 284,
       "original_sha256": "452722724630d0f2033c4c15e3b4fb9038650b2e8bf962af287ed3cf5d9ab61f",
-      "native_symbol": "_lck_mtx_gate_destroy",
-      "evidence": "Calls _gate_verify_tag_panic, _gate_verify_destroy_panic and _gate_destroy_panic; native _lck_mtx_gate_destroy calls the same helper set."
+      "native_symbol": "_lck_mtx_gate_free",
+      "evidence": "Calls _gate_verify_tag_panic, _gate_verify_destroy_panic and the gate destroy helpers. The first batch bound it to _lck_mtx_gate_destroy, and the native check panicked: \"Trying to destroy a gate that was allocated by gate_alloc_init; gate_free should be used\". The matching deallocator for the _lck_mtx_gate_alloc_init binding is _lck_mtx_gate_free."
     }
   ],
   "data": [],
