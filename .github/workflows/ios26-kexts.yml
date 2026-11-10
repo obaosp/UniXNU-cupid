@@ -1,0 +1,56 @@
+name: iOS 26 kext imports
+
+# One-off batch: decrypt the iPhone17,2 26.5.2 OS and Cryptex1,SystemOS images,
+# mount them and dump the undefined symbols/binds of the kexts that own the
+# remaining prelink stubs. Text only; Apple images are removed before the job
+# ends. No device boot is involved.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  imports:
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - name: Check out the device repository
+        uses: actions/checkout@v4
+        with:
+          path: device
+          persist-credentials: false
+
+      - name: Check out UniXNU
+        uses: actions/checkout@v4
+        with:
+          repository: UniXNU/UniXNU
+          ref: main
+          path: UniXNU
+          persist-credentials: false
+
+      - name: Install tools
+        run: |
+          brew install blacktop/tap/ipsw llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+          for tool in aea ipsw hdiutil diskutil llvm-nm llvm-objdump; do
+            command -v "$tool" || { echo "missing $tool"; exit 1; }
+          done
+
+      - name: Dump the kext imports
+        run: |
+          python3 device/tools/ios26-kext-imports.py UniXNU | tee "$RUNNER_TEMP/kext-imports.log"
+
+      - name: Upload the text log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios26-kext-imports
+          path: ${{ runner.temp }}/kext-imports.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove Apple inputs
+        if: always()
+        run: rm -rf UniXNU/out/ipsw /tmp/ios26-mnt-*
