@@ -115,6 +115,20 @@
       "original_sha256": "452722724630d0f2033c4c15e3b4fb9038650b2e8bf962af287ed3cf5d9ab61f",
       "native_symbol": "_lck_mtx_gate_free",
       "evidence": "Calls _gate_verify_tag_panic, _gate_verify_destroy_panic and the gate destroy helpers. The first batch bound it to _lck_mtx_gate_destroy, and the native check panicked: \"Trying to destroy a gate that was allocated by gate_alloc_init; gate_free should be used\". The matching deallocator for the _lck_mtx_gate_alloc_init binding is _lck_mtx_gate_free."
+    },
+    {
+      "original": "0xfffffff00a880b58",
+      "original_size": 164,
+      "original_sha256": "8c4815dee54ad97bac281e0cbbaee9c8a022d7f3fd837ffeb568ad95f7a4b225",
+      "native_symbol": "_vnode_getwithref",
+      "evidence": "apfs vnode wrapper: calls _vnode_getiocount, _lck_mtx_lock_contended and _lck_mtx_unlock_contended. The fourth panic arrived with x1/x8 = 0xfffffff00a5d0f40 (vnode) and the raw x30 in apfs; the native _vnode_getwithref calls vnode_getiocount. 9 apfs sites."
+    },
+    {
+      "original": "0xfffffff00a8c8d40",
+      "original_size": 84,
+      "original_sha256": "a2cc392af0e8a1ca95526f521982986739b5580fe3aa81bc789cdd7905a81a8f",
+      "native_symbol": "_zfree",
+      "evidence": "apfs zfree wrapper: calls ___bzero and the paired _zfree_ext; native _zfree calls zfree_ext and bzero. 3 apfs sites."
     }
   ],
   "data": [],
