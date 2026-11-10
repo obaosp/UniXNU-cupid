@@ -3,4 +3,5 @@
 # 13432 shims; the 24A446 fixture and the two iOS 27-only patches are gone.
 no-assert-strings.patch
 image4-flags-shim.patch
+fileset-register-report.patch
 timers-avoid-trapped-physical-timer.patch
