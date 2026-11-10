@@ -73,7 +73,7 @@ jobs:
             Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI \
             Silicon/Silicium/OpensslPkg/Library/OpensslLib/openssl
 
-      - name: Repair the stale ArmCpu gitlink
+      - name: Repair stale submodule gitlinks
         working-directory: UniXNU
         run: |
           # UniXNU main pins drivers/ArmCpu at 2e11cda72740b985dedde3e32ba72b0fd64eb475.
@@ -81,7 +81,11 @@ jobs:
           # so `git submodule update --init --recursive` fails in unixnu fetch/build.
           # Pin the index to the existing ArmCpu main commit for this build.
           git update-index --cacheinfo 160000,93a5030c5d983d0ef90f0fca93879d6e36ad1ba8,drivers/ArmCpu
-          git ls-tree HEAD drivers/ArmCpu
+          # UniXNU main also pins drivers/AppleKeyStoreState at
+          # 6ff4f11d8fdf853351f8d98e1bbe1373fb8da2e6, which is no longer reachable
+          # from the repository (remote main 58e5461e...). Pin the current main.
+          git update-index --cacheinfo 160000,58e5461ed3b751e4c91426b72d8686419abe9550,drivers/AppleKeyStoreState
+          git ls-tree HEAD drivers/ArmCpu drivers/AppleKeyStoreState
 
       - name: Apply device-side UniXNU fixes
         working-directory: UniXNU
