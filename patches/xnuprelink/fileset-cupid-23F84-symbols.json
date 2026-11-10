@@ -59,6 +59,13 @@
       "original_sha256": "ab34b3ae3066c1f1d7111ec8eaffcdf75dea01e12671153d62b8f9488a8edf0b",
       "native_symbol": "_ml_set_interrupts_enabled_with_debug",
       "evidence": "An 8-byte bti c; b thunk whose only call is the paired 0xa82930c -> _ml_set_interrupts_enabled_with_debug. ApplePMGR imports it for 59 sites."
+    },
+    {
+      "original": "0xfffffff00abda26c",
+      "original_size": 240,
+      "original_sha256": "a8050652801a1baecf87a78e2261d8686dcc04ac470aa0fda01159776140c5d2",
+      "native_symbol": "_unixnu_apple_image4_flags",
+      "evidence": "AppleImage4's one-time security-flag initializer: it reads the init byte at 0x7cd6ee8, computes flags from the security-mode struct at 0x7cd7010/0x7cd7030, and caches status 2 + the flag word at 0x7cd6eec/0x7cd6ef0. The native __DATA_CONST placement overwrites those globals. iPhone26 panic: AppleImage4 called 0xabda26c from 0x8d05be4; the wrapper ignores the return and reads the status out-pointer. Same shim as the 24A446 bring-up."
     }
   ],
   "data": [],

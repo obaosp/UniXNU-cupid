@@ -1,0 +1,25 @@
+--- a/osfmk/kern/debug.c
++++ b/osfmk/kern/debug.c
+@@ -2589,3 +2589,22 @@
+ 	panic("fileset: original component called an unmapped kernel function from %p (x0 0x%llx x1 0x%llx)",
+ 	    __builtin_ptrauth_strip(__builtin_return_address(0), 0), arg0, arg1);
+ }
++
++/*
++ * iOS 26 bring-up: AppleImage4's one-time security-flag initializer reads
++ * runtime globals that the native __DATA_CONST placement overwrites
++ * (0x7cd6ee8/0x7cd6eec/0x7cd6ef0 on the iPhone17,2 26.5.2 kernelcache).
++ * Return the cached status 2 and an empty flag word; Image4's callers treat
++ * non-zero status as "initialized" and read the out-pointers.
++ */
++__attribute__((used))
++void
++unixnu_apple_image4_flags(uint32_t *status, uint32_t *flags)
++{
++	if (status != NULL) {
++		*status = 2;
++	}
++	if (flags != NULL) {
++		*flags = 0;
++	}
++}
