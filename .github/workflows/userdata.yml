@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       os:
-        description: "OS profile (27 or a profiles/os directory name)"
+        description: "OS profile directory name (use the iPhone profile, not 27)"
         required: false
-        default: "27"
+        default: "ios-27.0.1-24A446"
 
 permissions:
   contents: read
@@ -124,6 +124,16 @@ jobs:
           print("flash_command", d["flash_command"])
           for w in d["windows"]:
               print("window", w["name"], hex(w["offset"]), w["size"], w["sha256"])
+          # Guard against resolve_os picking an upstream ipados-* profile: the
+          # raw window digests must equal the iPhone17,2 24A446 [root] pins.
+          import tomllib
+          profile = tomllib.load(open("../device/profiles/os/ios-27.0.1-24A446/profile.toml", "rb"))
+          pins = {"OS": profile["root"]["os_image_sha256"],
+                  "SystemOS": profile["root"]["systemos_image_sha256"]}
+          for w in d["windows"]:
+              if pins.get(w["name"]) != w["sha256"]:
+                  raise SystemExit(f"::error::{w['name']} window does not match the iPhone 27 root pin (got {w['sha256']}, want {pins.get(w['name'])})")
+          print("userdata windows match the iPhone17,2 24A446 root pins")
           PY
 
       - name: Split the image into upload-sized chunks

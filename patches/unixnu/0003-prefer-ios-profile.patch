@@ -1,0 +1,15 @@
+diff --git a/scripts/unixnu/profiles.py b/scripts/unixnu/profiles.py
+index 3ca8c9b..ced237e 100644
+--- a/scripts/unixnu/profiles.py
++++ b/scripts/unixnu/profiles.py
+@@ -21,7 +21,9 @@ def resolve_os(ctx, wanted):
+     names = sorted(path.name for path in (ctx.root / 'profiles/os').iterdir() if path.is_dir())
+     if wanted in names:
+         return wanted
+-    matches = [name for name in names if name.startswith(f'ipados-{wanted}.')]
++    matches = [name for name in names if name.startswith(f'ios-{wanted}.')]
++    if not matches:
++        matches = [name for name in names if name.startswith(f'ipados-{wanted}.')]
+     if len(matches) != 1:
+         raise Error(f'--os {wanted}: expected one of {", ".join(names)} or 17, 26, 27')
+     return matches[0]
