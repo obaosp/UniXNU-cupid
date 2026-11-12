@@ -1,19 +1,14 @@
 diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
-index 2bbd161..6ed753c 100644
+index 2bbd161..6d29e45 100644
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -54,6 +54,7 @@ extern "C" {
- #include <corecrypto/ccsha2.h>
- #include <kdp/sk_core.h>
- #include <pexpert/device_tree.h>
-+#include <arm/machine_routines.h>
- #include <kern/startup.h>
- 
- // how long to wait for matching root device, secs
-@@ -675,11 +676,39 @@ do_reboot:
+@@ -675,11 +675,42 @@ do_reboot:
  	return true;
  }
  
++/* ml_io_map is declared only under PEXPERT/MACH private macros. */
++extern "C" vm_offset_t ml_io_map(vm_offset_t phys_addr, vm_size_t size);
++
 +/*
 + * Read-only SM8450 UFS bring-up probe. Maps the GCC UFS branch and the UFSHCI
 + * controller and reports what the firmware left behind. It writes no register.
