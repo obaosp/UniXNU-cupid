@@ -376,6 +376,13 @@
       "evidence": "Loads the mount's covered vnode at +0x38, returns NULL when absent, calls vnode_getwithref and returns the vnode only on success. Directly precedes vfs_vnodecovered_noblock. Source bsd/vfs/kpi_vfs.c vfs_vnodecovered. Retargeted from the iPad 24A446 fixture by shape 1.00."
     },
     {
+      "original": "0xfffffff00add2190",
+      "original_size": 88,
+      "original_sha256": "2526994cc7e6766b5e2cf011e56f3efa8bc4fdea303332322b2c2d884cb5affe",
+      "native_symbol": "_vfs_vnodecovered_noblock",
+      "evidence": "Structural 1.00 match to the upstream iPad 24A446 fixture entry (88 bytes, same PAC-authenticated vnode->v_mount walk). sandbox calls it."
+    },
+    {
       "original": "0xfffffff00add2b78",
       "original_size": 72,
       "original_sha256": "8addd9e1fe680da4842c25211d8b3b6636f6ec4b88900ab8b3fbb006e2611e45",
@@ -698,6 +705,13 @@
       "evidence": "Darwin 26 KPI: the matching variant taking the 64-byte cdhash with its length at +0x40. Name chosen here; implemented in darwin26-kpi.patch. Retargeted from the iPad 24A446 fixture by shape 1.00."
     },
     {
+      "original": "0xfffffff00b11b558",
+      "original_size": 12,
+      "original_sha256": "6a1da7815f2ba1031e03858a109bc3964ea7c2c11b1dec2687822bdfe9bcff5e",
+      "native_symbol": "_set_compilation_service_cdhash_ext",
+      "evidence": "Structural 1.00 match to the upstream iPad 24A446 fixture entry: bti; ldr x1,[x0,#0x40]; b <setter>. AppleMobileFileIntegrity calls it."
+    },
+    {
       "original": "0xfffffff00b11b564",
       "original_size": 76,
       "original_sha256": "004119a3fa0cd07443e3d210724bab23fabe11443704963bab0ccc3f56e46517",
@@ -815,6 +829,13 @@
       "original_sha256": "2c40fd65a5ba24daf77b354da44c0c2c934d495f54d17dbf111370dd34842318",
       "native_symbol": "__ZN9IOService11Stop_InvokeE5IORPCP15OSMetaClassBasePFiS2_PS_E",
       "evidence": "IOHIDDevice::Dispatch reaches this stub on message id 0x98e715041c459fa5, which is IOService_Stop_ID in the native generated IOService.h, and signs the handler with discriminator 0xe4fe, which the native function authenticates. Hardware: panic 'called an unmapped kernel function' from IOHIDFamily during an AirPods output switch, sheng run 2026-11-05. Retargeted from the iPad 24A446 fixture by shape 1.00."
+    },
+    {
+      "original": "0xfffffff00b2a7f90",
+      "original_size": 284,
+      "original_sha256": "ae77c292366b4a40d011f90c7d7c3629cc68c44fb671b8c9df9851d6c48ac18f",
+      "native_symbol": "__ZN9IOService12Start_InvokeE5IORPCP15OSMetaClassBasePFiS2_PS_E",
+      "evidence": "Structural 0.89 match to the upstream iPad 24A446 fixture entry IOService::Start_Invoke (284 bytes); the sibling Stop/SetHandler_Invoke stubs score lower. IOHIDFamily and IOStorageFamily call it."
     },
     {
       "original": "0xfffffff00b2b8948",
