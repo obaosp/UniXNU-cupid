@@ -1,0 +1,52 @@
+diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
+index 2bbd161..6ed753c 100644
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -54,6 +54,7 @@ extern "C" {
+ #include <corecrypto/ccsha2.h>
+ #include <kdp/sk_core.h>
+ #include <pexpert/device_tree.h>
++#include <arm/machine_routines.h>
+ #include <kern/startup.h>
+ 
+ // how long to wait for matching root device, secs
+@@ -675,11 +676,39 @@ do_reboot:
+ 	return true;
+ }
+ 
++/*
++ * Read-only SM8450 UFS bring-up probe. Maps the GCC UFS branch and the UFSHCI
++ * controller and reports what the firmware left behind. It writes no register.
++ * Enabled only by unixnu-ufs-probe=1; the panic carries the values to the
++ * panic screen so a photograph is enough.
++ */
++static void
++unixnu_ufs_probe(void)
++{
++	unsigned int enabled = 0;
++	if (!PE_parse_boot_argn("unixnu-ufs-probe", &enabled, sizeof(enabled)) || !enabled) {
++		return;
++	}
++	volatile uint32_t *gcc = (volatile uint32_t *)ml_io_map(0x187000, 0x1000);
++	volatile uint32_t *hc = (volatile uint32_t *)ml_io_map(0x1d84000, 0x3000);
++	if (!gcc || !hc) {
++		panic("unixnu-ufs-probe: map failed gcc=%p hc=%p", (void *)gcc, (void *)hc);
++	}
++	panic("unixnu-ufs-probe gcc gdscr=%08x axi=%08x ahb=%08x tx0=%08x rx0=%08x unipro=%08x ice=%08x aux=%08x aggre=%08x hc cap=%08x ver=%08x hcs=%08x hce=%08x is=%08x ie=%08x utrlba=%08x utrlbau=%08x dbr=%08x rsr=%08x",
++	    gcc[0x004 / 4], gcc[0x018 / 4], gcc[0x020 / 4], gcc[0x024 / 4],
++	    gcc[0x028 / 4], gcc[0x064 / 4], gcc[0x06c / 4], gcc[0x0a4 / 4],
++	    gcc[0x0d4 / 4], hc[0x00 / 4], hc[0x08 / 4], hc[0x30 / 4],
++	    hc[0x34 / 4], hc[0x20 / 4], hc[0x24 / 4], hc[0x50 / 4],
++	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
++}
++
+ kern_return_t
+ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+     dev_t * root, u_int32_t * oflags )
+ {
+ 	mach_timespec_t     t;
++
++	unixnu_ufs_probe();
+ 	IOService *         service;
+ 	IORegistryEntry *   regEntry;
+ 	OSDictionary *      matching = NULL;
