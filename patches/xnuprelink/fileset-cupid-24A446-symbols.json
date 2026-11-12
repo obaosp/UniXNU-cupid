@@ -985,6 +985,13 @@
       "evidence": "Original and native __ZTV5IOCPU have this method at slot 0x118 with matching authenticated-pointer key, address diversity and discriminator 33515. The table identity is present in the LTO-only map before this anchor is added. Also cross-checked with the retained import and RELEASE-LTO pairing; recovery provenance: prelink-recovery-2026-11-02. Retargeted from the iPad 24A446 fixture by shape 1.00."
     },
     {
+      "original": "0xfffffff00b33efa4",
+      "original_size": 20,
+      "original_sha256": "1c18e1a86553ba8f78a17a26e21f8d5648d07655b0fb94bfa7fcff8a7008aa27",
+      "native_symbol": "__ZN5IOCPU11setPropertyEPK8OSSymbolP8OSObject",
+      "evidence": "Third panic: OSKext reset code dispatched through the vtable at 0x7ef4000; x16 held the table and x8 the first entry, this 20-byte thunk. The thunk null-checks x1 and tail-calls IORegistryEntry::setProperty(const OSSymbol*, OSObject*); the table also carries IOCPU::getProperty and the IORegistryEntry property methods, so it is the IOCPU override. Native ABI is (this, OSSymbol*, OSObject*) -> bool."
+    },
+    {
       "original": "0xfffffff00b369a14",
       "original_size": 368,
       "original_sha256": "ccb9f17ed6551718fdb5298f5cd72fe734e9ef8899816fcf8af54db5a805a126",
