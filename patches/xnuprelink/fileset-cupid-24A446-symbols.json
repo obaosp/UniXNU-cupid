@@ -764,8 +764,15 @@
       "original": "0xfffffff00b2a41fc",
       "original_size": 68,
       "original_sha256": "f457db4987f503981ca01c44017f2495321850cca478d4a9cf7b636a0af94ddc",
+      "native_symbol": "_image4_dlxk_link",
+      "evidence": "Panics \"image4 dlxk interface already set\" (dlxk.c) when called twice, else stores the dlxk interface pointer. The earlier retarget mislabeled it as image4_v2_interface_register because the two bodies share a 0.94 shape; the inline strings differ (dlxk.c vs image4_v2.c). Native body: libkern/image4/dlxk.c."
+    },
+    {
+      "original": "0xfffffff00b2a425c",
+      "original_size": 68,
+      "original_sha256": "92f5c04e9e0c51e3dd2fd2b09eb5b2439266a3a115227b648a275f57491c9ccc",
       "native_symbol": "_image4_v2_interface_register",
-      "evidence": "Panics \"libImage4_V2 interface already set\" (image4_v2.c) when called twice, else stores the interface pointer; same shape as image4_dlxk_link next to it. The Image4 kext calls it from start. Native body: patches/xnu-12377/darwin26-kpi.patch libkern/image4/image4_v2.c. Retargeted from the iPad 24A446 fixture by shape 0.94."
+      "evidence": "Panics \"libImage4_V2 interface already set @%s:%d\" (image4_v2.c) when called twice, else stores the interface pointer; Image4::start calls it with the interface table. Same ABI as the native stub from patches/xnu-12377/darwin26-kpi.patch libkern/image4/image4_v2.c."
     },
     {
       "original": "0xfffffff00b2a7e74",
