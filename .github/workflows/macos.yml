@@ -128,17 +128,17 @@ jobs:
         id: status
         working-directory: UniXNU
         run: |
-          ./unixnu defconfig cupid_ios26_defconfig -D ../device
+          ./unixnu defconfig cupid_ios27_defconfig -D ../device
           ./unixnu fetch -D ../device
           ./unixnu status --json -D ../device | tee "$RUNNER_TEMP/status.json"
           python3 - "$RUNNER_TEMP/status.json" <<'PY'
           import json, sys
           status = json.load(open(sys.argv[1]))
           text = json.dumps(status)
-          for needle in ("ios-26.5.2-23F84", "arm64e", "sm8450", "cupid_ios26"):
+          for needle in ("ios-27.0.1-24A446", "arm64e", "sm8450", "cupid_ios27"):
               if needle not in text:
                   sys.exit(f"::error::resolved status is missing {needle}")
-          print("status resolves the iOS 26 arm64e profile, the sm8450 source and the cupid defconfig")
+          print("status resolves the iOS 27 arm64e profile, the sm8450 source and the cupid defconfig")
           PY
 
       - name: Install the XnuPrelink reviewed symbols
@@ -275,7 +275,7 @@ jobs:
         if: always() && steps.status.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: cupid-ios26-kernel-logs
+          name: cupid-ios27-kernel-logs
           path: ${{ runner.temp }}/logs/*
           if-no-files-found: warn
           retention-days: 7
@@ -290,7 +290,7 @@ jobs:
           KERNEL: ${{ steps.kernel.outcome }}
         run: |
           {
-            echo "## cupid / iOS 26.5.2 (23F84, arm64e)"
+            echo "## cupid / iOS 27.0.1 (24A446, arm64e)"
             echo
             echo "| Step | Result |"
             echo "| --- | --- |"

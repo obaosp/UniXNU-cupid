@@ -3,12 +3,12 @@
 This repository owns one board: Xiaomi 12 (`cupid`, SM8450). Shared platform
 description lives in `UniXNU-sm8450-common`; drivers live in component
 repositories; OS profiles live in this repository until upstream ships an
-iOS 26 one.
+iPhone iOS 27 one.
 
 ## Non-negotiables
 
-- **iPhone, not iPad.** The target is iOS 26 with an iPhone17,2 / D94AP
-  identity. Do not switch `board.os_profile` to `ipados-26.5.2-23F84`: the
+- **iPhone, not iPad.** The current target is iOS 27 with an iPhone17,2 / D94AP
+  identity. Do not switch `board.os_profile` to `ipados-27.0.1-24A446`: the
   build may succeed, but product idiom, display and userland assumptions are
   wrong for a phone.
 - **Never guess a hardware value.** Cite mainline, vendor DTS or a measurement
@@ -37,7 +37,7 @@ iOS 26 one.
 ## Workflow
 
 1. Install the profile: `scripts/install-os-profile.sh ../UniXNU`.
-2. Resolve: `./unixnu defconfig cupid_ios26_defconfig -D ../UniXNU-cupid`,
+2. Resolve: `./unixnu defconfig cupid_ios27_defconfig -D ../UniXNU-cupid`,
    `./unixnu fetch -D ../UniXNU-cupid`, `./unixnu status --json -D ../UniXNU-cupid`.
 3. Kernel: `./unixnu build kernel -D ../UniXNU-cupid` (macOS runner or a Mac
    with Xcode), or rely on `.github/workflows/macos.yml`.

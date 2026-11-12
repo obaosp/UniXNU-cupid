@@ -1,7 +1,7 @@
 > [!WARNING]
 > **Work in progress — this port does not boot yet.**
 >
-> iOS 26 on the Xiaomi 12 (`cupid`, SM8450) is under active development. It
+> iOS 27 on the Xiaomi 12 (`cupid`, SM8450) is under active development. The iOS 26.5.2 image is kept as a fallback. It
 > currently stops in a kernel panic during early kext start. Build failures,
 > boot loops and kernel panics are expected while the port is unfinished.
 >
@@ -9,17 +9,25 @@
 > until this notice is removed.** The issue tracker is closed to those reports;
 > progress is tracked in `STATE.md`, `NEXT.md` and the build notes.
 
-# UniXNU cupid — iOS 26 on the Xiaomi 12
+# UniXNU cupid — iOS 27 (iOS 26 fallback) on the Xiaomi 12
 
-Bring-up of **iOS 26.5.2 (23F84, arm64e)** on the **Xiaomi 12** (`cupid`,
+Bring-up of **iOS 27.0.1 (24A446, arm64e)** on the **Xiaomi 12** (`cupid`,
 Qualcomm **SM8450**), presented to iOS as an **iPhone 16 Pro Max**
 (`iPhone17,2`, `D94AP`).
 
 This is a phone port, so it uses an **iPhone-flavoured** OS profile. It does
-**not** boot the iPadOS 26 profile that ships in UniXNU main: different IPSW,
-original kexts and product identity.
+**not** boot the iPadOS 27 profile that ships in UniXNU main: different IPSW,
+original kexts and product identity. The iOS 26.5.2 (23F84) profile remains as
+a fallback.
 
 ## Why iOS 26, not iOS 27
+
+> **Update (2026-11-12): iOS 27 is the current target.** The sheng port boots
+> 24A446 with XnuPrelink's upstream 156-binding `fileset-24A446-symbols.json`.
+> Retargeted to the iPhone17,2 24A446 kernelcache, that fixture leaves **55
+> stubs / 17 missing** versus 137 stubs for the old 30-shim attempt. The iOS
+> 27 profile is restored and selected; the iOS 26.5.2 image remains staged as
+> fallback.
 
 iOS 27.0.1 (24A446) reports `xnu-13432.2.10~2`, while the newest public XNU
 source is `12377.121.6`. That mismatch forced a large reviewed-symbol fixture
@@ -52,8 +60,10 @@ Sources: mainline Linux `sm8450.dtsi` at
 | Path | Contents |
 | --- | --- |
 | `board.toml` | Format 2 board: SM8450 source, iOS 26 profile, stage-0 components |
-| `profiles/os/ios-26.5.2-23F84/` | The iPhone17,2 iOS 26 profile UniXNU main does not ship |
-| `configs/cupid_ios26_defconfig` | Stage-0 kernel configuration |
+| `profiles/os/ios-27.0.1-24A446/` | The iPhone17,2 iOS 27 profile (current target) |
+| `profiles/os/ios-26.5.2-23F84/` | The iPhone17,2 iOS 26 fallback profile |
+| `configs/cupid_ios27_defconfig` | Stage-0 iOS 27 kernel configuration |
+| `configs/cupid_ios26_defconfig` | Stage-0 iOS 26 fallback configuration |
 | `dts/cupid.dts` | Memory, splash, CPU clusters; peripherals as they are enabled |
 | `feeds.toml` | Pinned [`UniXNU-sm8450-common`](https://github.com/obaosp/UniXNU-sm8450-common) source |
 | `porting.toml` | Per-area inputs, findings, limits and next action |
@@ -63,9 +73,10 @@ Sources: mainline Linux `sm8450.dtsi` at
 ## Why a shipped profile
 
 UniXNU resolves `profiles/os/<name>` from its own checkout and main has only
-`ipados-17.7.11`, `ipados-26.5.2` and `ipados-27.0.1`. The iPhone 26 profile
-here is built from the iPhone17,2 26.5.2 kernelcache (302 fileset entries,
-`xnu-12377.122.8~1`) and the matching `xnu-12377.121.6` source: iPhone17,2 IPSW
+`ipados-17.7.11`, `ipados-26.5.2` and `ipados-27.0.1`. The iPhone 27 profile here is built from the iPhone17,2 27.0.1 kernelcache and
+XnuPrelink's retargeted 24A446 fixture; the iOS 26 profile is built from the
+iPhone17,2 26.5.2 kernelcache (302 fileset entries, `xnu-12377.122.8~1`) and the
+matching `xnu-12377.121.6` source: iPhone17,2 IPSW
 pins, the AMFI early-init wrapper `0xfffffff008edda30`, the iPhone prelink roots
 (no `IOHIDEventDriver` bundle), and the OS/SystemOS volume UUIDs and image
 digests from the macOS AEA pass. A RELEASE-LTO build of the same source is the
@@ -79,7 +90,7 @@ binds the eight functions the reference still cannot shape-match.
 git clone https://github.com/UniXNU/UniXNU ../UniXNU
 scripts/install-os-profile.sh ../UniXNU
 cd ../UniXNU
-./unixnu defconfig cupid_ios26_defconfig -D ../UniXNU-cupid
+./unixnu defconfig cupid_ios27_defconfig -D ../UniXNU-cupid
 ./unixnu fetch -D ../UniXNU-cupid
 ./unixnu status --json -D ../UniXNU-cupid
 ./unixnu build kernel -D ../UniXNU-cupid      # Xcode + iphoneos SDK
@@ -89,7 +100,7 @@ Full images need `uefi-cupid` (not published yet), the platform seed
 `UNIXNU_UNIQUE_CHIP_ID` and a Data seed:
 
 ```sh
-scripts/package.sh --os ios-26.5.2-23F84 --uefi ../uefi-cupid
+scripts/package.sh --os ios-27.0.1-24A446 --uefi ../uefi-cupid
 ```
 
 ## CI
@@ -106,7 +117,7 @@ image build and still needs the platform seed and Data seed.
 | Area | State |
 | --- | --- |
 | Configuration, CPU/interrupts | `implemented` (host) |
-| Kernel build + prelink | CI job; local prelink candidate with the iPhone 26 reference and 8 reviewed bindings (72 stubs) |
+| Kernel build + prelink | CI job; iOS 27 prelink with the retargeted 24A446 fixture (local 55 stubs / 17 missing); iOS 26 image staged as fallback |
 | Firmware, storage, display, input, GPU, network, audio, power | `planned` |
 
 Device-side work is blocked on the phone: the build host has no `adb`,
