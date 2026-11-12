@@ -330,8 +330,8 @@
       "original": "0xfffffff00ad469c8",
       "original_size": 16,
       "original_sha256": "2df1ddb4e3bade4aee388f476ec3df2ec4e4001db3285879a2cc04b9cee1bfd9",
-      "native_symbol": "_ml_get_cpu_count",
-      "evidence": "bti; ldr w0,[global]; ret. AppleARMPlatform iterates w0+1 CPUs, the watchdog timer computes a per-CPU bitmap as (w0+1)/8, and apfs rejects w0+1 >= 9. That is the machine_info CPU count, matching the reference _ml_get_cpu_count body."
+      "native_symbol": "_ml_get_max_cpu_number",
+      "evidence": "bti; ldr w0,[global]; ret. Its callers treat the result as the highest CPU number: AppleARMWatchdogTimer sizes a bitmap as ceil((w0+1)/8), and apfs requires w0+1 < 9 (8 CPUs, max index 7). The prelink already resolves 0xad467f0 as _ml_get_cpu_count, so this second slot is the max-CPU-number getter, matching the reference body."
     },
     {
       "original": "0xfffffff00ad71480",
