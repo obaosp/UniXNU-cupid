@@ -1,0 +1,161 @@
+name: macOS userdata image
+
+# Builds the raw image for the phone's `userdata` partition: the unchanged
+# iPhone17,2 OS and SystemOS images behind the SHNGROOT manifest. This needs
+# macOS `/usr/bin/aea` to decrypt the AEA images from the IPSW, so it runs on a
+# hosted macOS runner. The image is Apple content: download the chunks, delete
+# the run afterwards. Nothing is published to the repository.
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: "OS profile (27 or a profiles/os directory name)"
+        required: false
+        default: "27"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: userdata-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  HOMEBREW_NO_ENV_HINTS: 1
+
+jobs:
+  userdata:
+    runs-on: macos-26
+    timeout-minutes: 360
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      UNIXNU_DEVICE: ${{ github.workspace }}/device
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the device repository
+        uses: actions/checkout@v4
+        with:
+          path: device
+          persist-credentials: false
+
+      - name: Check out UniXNU
+        uses: actions/checkout@v4
+        with:
+          repository: UniXNU/UniXNU
+          ref: main
+          path: UniXNU
+          persist-credentials: false
+
+      - name: Repair stale submodule gitlinks
+        working-directory: UniXNU
+        run: |
+          git update-index --cacheinfo 160000,93a5030c5d983d0ef90f0fca93879d6e36ad1ba8,drivers/ArmCpu
+          git update-index --cacheinfo 160000,58e5461ed3b751e4c91426b72d8686419abe9550,drivers/AppleKeyStoreState
+          git ls-tree HEAD drivers/ArmCpu drivers/AppleKeyStoreState
+
+      - name: Apply device-side UniXNU fixes
+        working-directory: UniXNU
+        run: |
+          shopt -s nullglob
+          for patch in ../device/patches/unixnu/*.patch; do
+            echo "applying $(basename "$patch")"
+            git apply "$patch"
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install host tools
+        run: |
+          brew install llvm lld mtools dtc
+          if ! command -v unifdef >/dev/null; then
+            brew install unifdef
+            echo "$(brew --prefix unifdef)/bin" >> "$GITHUB_PATH"
+          fi
+          # ipsw fetches the AEA key; /usr/bin/aea decrypts the images.
+          brew install blacktop/tap/ipsw
+
+      - name: Report the toolchain and disk
+        run: |
+          sw_vers
+          uname -m
+          python3 --version
+          command -v ipsw
+          test -x /usr/bin/aea && echo "/usr/bin/aea present"
+          df -h "$GITHUB_WORKSPACE"
+
+      - name: Install the OS profile
+        working-directory: device
+        run: scripts/install-os-profile.sh ../UniXNU
+
+      - name: Resolve the configuration
+        working-directory: UniXNU
+        run: |
+          ./unixnu defconfig cupid_ios27_defconfig -D ../device
+          ./unixnu fetch -D ../device
+          ./unixnu status --json -D ../device | tee "$RUNNER_TEMP/status.json"
+          python3 - "$RUNNER_TEMP/status.json" <<'PY'
+          import json, sys
+          status = json.load(open(sys.argv[1]))
+          text = json.dumps(status)
+          for needle in ("ios-27.0.1-24A446", "arm64e", "sm8450", "cupid_ios27"):
+              if needle not in text:
+                  sys.exit(f"::error::resolved status is missing {needle}")
+          print("status resolves the iOS 27 arm64e profile")
+          PY
+
+      - name: Build the userdata image
+        working-directory: UniXNU
+        run: |
+          ./unixnu userdata -D ../device --os "${{ inputs.os }}"
+          df -h "$GITHUB_WORKSPACE"
+          REPORT=$(find out/cupid -path '*/userdata/userdata-root.json' | head -1)
+          test -n "$REPORT" || { echo "::error::no userdata-root.json"; exit 1; }
+          python3 - "$REPORT" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          print("image_bytes", d["image_bytes"])
+          print("image_sha256", d["image_sha256"])
+          print("manifest_sha256", d["manifest_sha256"])
+          print("flash_command", d["flash_command"])
+          for w in d["windows"]:
+              print("window", w["name"], hex(w["offset"]), w["size"], w["sha256"])
+          PY
+
+      - name: Split the image into upload-sized chunks
+        working-directory: UniXNU
+        run: |
+          IMAGE=$(find out/cupid -path '*/userdata/userdata-root.img' | head -1)
+          test -n "$IMAGE" || { echo "::error::no userdata-root.img"; exit 1; }
+          DIR=$(dirname "$IMAGE")
+          mkdir -p "$DIR/parts/aa" "$DIR/parts/ab"
+          # 1900 MiB chunks; two artifacts stay below the 10 GB artifact limit.
+          split -b 1900m -d -a 2 "$IMAGE" "$DIR/parts/chunk-"
+          i=0
+          for part in "$DIR"/parts/chunk-*; do
+            if [ $i -lt 4 ]; then mv "$part" "$DIR/parts/aa/"; else mv "$part" "$DIR/parts/ab/"; fi
+            i=$((i + 1))
+          done
+          cp "$DIR/userdata-root.json" "$DIR/parts/aa/" 2>/dev/null || true
+          ls -lh "$DIR/parts/aa" "$DIR/parts/ab"
+          sha256sum "$DIR"/parts/aa/* "$DIR"/parts/ab/*
+
+      - name: Upload userdata chunks A
+        uses: actions/upload-artifact@v4
+        with:
+          name: cupid-userdata-aa
+          path: UniXNU/out/cupid/*/*/userdata/parts/aa/*
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload userdata chunks B
+        uses: actions/upload-artifact@v4
+        with:
+          name: cupid-userdata-ab
+          path: UniXNU/out/cupid/*/*/userdata/parts/ab/*
+          if-no-files-found: error
+          retention-days: 3

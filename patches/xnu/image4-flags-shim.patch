@@ -6,9 +6,9 @@
  }
 +
 +/*
-+ * iOS 26 bring-up: AppleImage4's one-time security-flag initializer reads
++ * iOS 27 bring-up: AppleImage4's one-time security-flag initializer reads
 + * runtime globals that the native __DATA_CONST placement overwrites
-+ * (0x7cd6ee8/0x7cd6eec/0x7cd6ef0 on the iPhone17,2 26.5.2 kernelcache).
++ * (the same interface slots in the iPhone17,2 24A446 kernelcache).
 + * Return the cached status 2 and an empty flag word; Image4's callers treat
 + * non-zero status as "initialized" and read the out-pointers.
 + */

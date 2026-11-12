@@ -1,4 +1,0 @@
-# OS patch paths for xnu-12377.121.6, one per line in application order.
-# 23F84 ships xnu-12377.122.8, so the public 12377 source already has the Darwin 25 syscalls; only the
-# boot-progress patch is needed (the Darwin 26 syscall/KPI patches belong to 24A446).
-arch:../../../patches/xnu-12377/zzz-boot-progress.patch

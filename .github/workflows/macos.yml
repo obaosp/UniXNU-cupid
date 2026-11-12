@@ -1,8 +1,8 @@
 name: macOS kernel build
 
-# Builds the arm64e iOS 26 XNU for cupid on a GitHub macOS runner. This is the
+# Builds the arm64e iOS 27 XNU for cupid on a GitHub macOS runner. This is the
 # reproducible host check while the phone is not attached: it resolves the
-# iOS 26 profile, fetches the pinned sources, decodes the iPhone17,2 kernelcache
+# iOS 27 profile, fetches the pinned sources, decodes the iPhone17,2 kernelcache
 # and prelinks the kernel. It publishes text logs only (no Apple images).
 
 on:
@@ -120,7 +120,7 @@ jobs:
           done
           df -h "$GITHUB_WORKSPACE"
 
-      - name: Install the iOS 26 profile
+      - name: Install the iOS 27 profile
         working-directory: device
         run: scripts/install-os-profile.sh ../UniXNU
 

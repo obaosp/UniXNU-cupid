@@ -6,7 +6,7 @@ soc = "SM8450"
 description = "Xiaomi 12 (cupid)"
 kit = "cupid"
 soc_source = "sm8450"
-# iPhone-flavoured iOS 27 profile (iOS 26.5.2 remains a fallback). The profile is shipped in this repository
+# iPhone-flavoured iOS 27 profile. The profile is shipped in this repository
 # under profiles/os/ and installed into the UniXNU checkout by
 # scripts/install-os-profile.sh; UniXNU main does not carry it yet.
 os_profile = "ios-27.0.1-24A446"
@@ -107,5 +107,4 @@ artwork-display-gamut = "sRGB"
 unixnu = "../UniXNU"
 
 [package.defconfig]
-"ios-26.5.2-23F84" = "cupid_ios26_defconfig"
 "ios-27.0.1-24A446" = "cupid_ios27_defconfig"
