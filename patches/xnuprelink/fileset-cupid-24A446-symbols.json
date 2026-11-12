@@ -194,6 +194,13 @@
       "evidence": "The XnuPrelink map already paired this exact original body to native _zalloc_ro (0x7390630). The original computes a zalloc_ro zone entry at 0xb747f80 + index*0xc0, calls 0xac43174, validates the returned pointer against the original pmap tables, and panics via 0xb411164 on mismatch. The native _zalloc_ro is the same-source allocator; bind by raw-byte hash."
     },
     {
+      "original": "0xfffffff00ac48238",
+      "original_size": 128,
+      "original_sha256": "8d3c95deebf0774c9957f793e211f69002884b2dfa997461ae3a61b3947d3c72",
+      "native_symbol": "_zone_require_ro",
+      "evidence": "The sandbox destructor passes (zone id from its __DATA_CONST, object size 0xb8, object pointer); the body loads the per-zone size table by w0*8, checks the pointer against the zone range, validates the page zone id (& 0x3ff) against w0, and its failure path panics with \"zone_require_ro failed: address not in a ro zone (addr: %p) @%s:%d\" from zalloc.c. AMFI uses the same import."
+    },
+    {
       "original": "0xfffffff00ac4c1dc",
       "original_size": 16,
       "original_sha256": "8d9d5229bb16beb4bde6c314115f5f8b3200d9140c9c9eb729fa5f5159dbd1e9",
