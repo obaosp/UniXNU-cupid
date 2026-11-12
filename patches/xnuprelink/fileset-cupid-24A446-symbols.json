@@ -327,6 +327,13 @@
       "evidence": "Reads MPIDR_EL1 and returns the cluster_id of the matching topology entry. Source: osfmk/arm64/machine_routines.c ml_get_cluster_number_local. Retargeted from the iPad 24A446 fixture by shape 1.00."
     },
     {
+      "original": "0xfffffff00ad469c8",
+      "original_size": 16,
+      "original_sha256": "2df1ddb4e3bade4aee388f476ec3df2ec4e4001db3285879a2cc04b9cee1bfd9",
+      "native_symbol": "_ml_get_cpu_count",
+      "evidence": "bti; ldr w0,[global]; ret. AppleARMPlatform iterates w0+1 CPUs, the watchdog timer computes a per-CPU bitmap as (w0+1)/8, and apfs rejects w0+1 >= 9. That is the machine_info CPU count, matching the reference _ml_get_cpu_count body."
+    },
+    {
       "original": "0xfffffff00ad71480",
       "original_size": 56,
       "original_sha256": "d65de3245a3f10c0c4a5ada05a183575313e92c5be994464de50e05544fe844e",
@@ -563,6 +570,13 @@
       "original_sha256": "e7c577b28c4eb9e493475aed9e918df9d6b2ff3956d6f5410beaa3ad09fb230d",
       "native_symbol": "_proc_parent",
       "evidence": "Uses the name \"proc_parent\" in its message and returns the parent proc with a reference; the only unpaired native function with that string. Sandbox calls it. Source: bsd/kern/kern_proc.c proc_parent. Retargeted from the iPad 24A446 fixture by shape 0.98."
+    },
+    {
+      "original": "0xfffffff00b0de1d8",
+      "original_size": 132,
+      "original_sha256": "c4d9c5197bc479af03299f2bfad6e1c52bff9caa00293d193ba4b47c17a90e78",
+      "native_symbol": "_proc_name",
+      "evidence": "Same body as the reference _proc_name: bzero(buf,len), proc_find(pid), copy p_comm, proc_rele. AGXG17P, AMFI, apfs and the IO kexts call it with (pid, buffer, len). Darwin 27 adds the name-offset/length path, hence 132 vs 108 bytes."
     },
     {
       "original": "0xfffffff00b0de6e0",
