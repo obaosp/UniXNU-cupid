@@ -985,6 +985,85 @@
       "evidence": "Names itself \"pmap_free_reserved_ppl_page\" in \"%s: function not supported in this environment\" from pmap.c. The native non-PPL pmap implements the same exported KPI as a no-op. Source: osfmk/arm/pmap/pmap.c, config/Private.exports. Retargeted from the iPad 24A446 fixture by shape 1.00."
     }
   ],
-  "data": [],
+  "data": [
+    {
+      "original": "0xfffffff00b70cff0",
+      "native_symbol": "_vnop_kqfilt_add_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_kqfilt_add; native _vnop_kqfilt_add_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d030",
+      "native_symbol": "_vnop_kqfilt_remove_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_kqfilt_remove; native _vnop_kqfilt_remove_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d070",
+      "native_symbol": "_vnop_monitor_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_monitor; native _vnop_monitor_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d0b0",
+      "native_symbol": "_vnop_getnamedstream_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_getnamedstream; native _vnop_getnamedstream_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d0f0",
+      "native_symbol": "_vnop_makenamedstream_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_makenamedstream; native _vnop_makenamedstream_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d130",
+      "native_symbol": "_vnop_removenamedstream_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_removenamedstream; native _vnop_removenamedstream_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d1b0",
+      "native_symbol": "_vnop_access_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_access; native _vnop_access_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d228",
+      "native_symbol": "_vnop_create_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_create; native _vnop_create_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d268",
+      "native_symbol": "_vnop_whiteout_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_whiteout; native _vnop_whiteout_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d2a8",
+      "native_symbol": "_vnop_mknod_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_mknod; native _vnop_mknod_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d2e8",
+      "native_symbol": "_vnop_setattr_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_setattr; native _vnop_setattr_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d328",
+      "native_symbol": "_vnop_write_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_write; native _vnop_write_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    },
+    {
+      "original": "0xfffffff00b70d7a8",
+      "native_symbol": "_vnop_setlabel_desc",
+      "addend": 0,
+      "evidence": "vnodeop_desc with vdesc_name at +8 pointing to the unique string vnop_setlabel; native _vnop_setlabel_desc has the same name and is defined in bsd/vfs/vnode_if.c. vfs_fsadd consumes the descriptor offset to index the operation vector. The 2026-11-02 device panic at vfs_fsadd+0x364 used the unresolved vnop_mknod descriptor as zone_array data and read offset 0xaaaaab. Other absent vnode descriptors are bound by the same explicit name identity. Retargeted to the iPhone 27 collection by the unique vnop_* name string and vdesc_name slot."
+    }
+  ],
   "sites": []
 }
