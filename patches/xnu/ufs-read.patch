@@ -10,7 +10,7 @@
  #include <libkern/c++/OSAllocation.h>
  
  extern "C" {
-@@ -704,6 +707,193 @@
+@@ -704,6 +707,241 @@
  	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
  }
  
@@ -58,6 +58,27 @@
 +};
 +
 +static void
++unixnu_ufs_be32(uint8_t *at, uint32_t value)
++{
++	at[0] = (uint8_t)(value >> 24);
++	at[1] = (uint8_t)(value >> 16);
++	at[2] = (uint8_t)(value >> 8);
++	at[3] = (uint8_t)value;
++}
++
++static uint32_t
++unixnu_ufs_le32(const uint8_t *at)
++{
++	return (uint32_t)at[0] | ((uint32_t)at[1] << 8) | ((uint32_t)at[2] << 16) | ((uint32_t)at[3] << 24);
++}
++
++static uint64_t
++unixnu_ufs_le64(const uint8_t *at)
++{
++	return (uint64_t)unixnu_ufs_le32(at) | ((uint64_t)unixnu_ufs_le32(at + 4) << 32);
++}
++
++static void
 +unixnu_ufs_read_probe(void)
 +{
 +	unsigned int enabled = 0;
@@ -82,7 +103,7 @@
 +		panic("unixnu-ufs-read: list map failed (%llx)", list);
 +	}
 +	uint8_t *virt = (uint8_t *)map->getVirtualAddress();
-+	const uint32_t ucdOffset = 4096, rspOffset = 512;
++	const uint32_t ucdOffset = 4096, rspOffset = 512, prdtOffset = 1024, dataOffset = 8192;
 +	unixnu_zero32(virt, 16384);
 +	unixnu_cache_clean(virt, 16384);
 +
@@ -97,8 +118,8 @@
 +		panic("unixnu-ufs-read: firmware command outstanding dbr=%08x hcs=%08x uic=%08x %08x %08x %08x %08x",
 +		    dbr_before, hcs_before, uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
-+	hc[0x24 / 4] = 0;               /* mask interrupts */
-+	hc[0x60 / 4] = 0;               /* stop the firmware request list */
++	hc[0x24 / 4] = 0;
++	hc[0x60 / 4] = 0;
 +	__asm__ volatile("dsb sy" ::: "memory");
 +	unsigned int loops = 10000;
 +	while ((hc[0x60 / 4] & 1) && loops--) {
@@ -130,7 +151,6 @@
 +		panic("unixnu-ufs-read: SMMU configure: %s idx=%u bank=%u uic=%08x %08x %08x %08x %08x",
 +		    smmu_error, plan.slot, plan.bank, uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
-+
 +	hc[0x50 / 4] = (uint32_t)list;
 +	hc[0x54 / 4] = (uint32_t)(list >> 32);
 +	hc[0x20 / 4] = 0xffffffffU;
@@ -144,25 +164,36 @@
 +		    hc[0x30 / 4], uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
 +
-+	auto command = [&](uint8_t lun, const uint8_t *cdb, unsigned cdb_length) -> UnixnuUfsResult {
++	auto command = [&](uint8_t lun, const uint8_t *cdb, unsigned cdb_length, bool to_host, uint32_t length) -> UnixnuUfsResult {
 +		uint8_t *utrd = virt;
 +		uint8_t *ucd = virt + ucdOffset;
 +		unixnu_zero32(utrd, 32);
 +		unixnu_zero32(ucd, 1024 + 16);
 +		ucd[0] = 0x01;          /* COMMAND UPIU */
-+		ucd[1] = 0x00;          /* no data */
++		ucd[1] = to_host ? 0x40 : 0x00;
 +		ucd[2] = lun;
 +		ucd[3] = 0;             /* task tag */
++		unixnu_ufs_be32(ucd + 12, length);
 +		for (unsigned index = 0; index < cdb_length; index++) {
 +			ucd[16 + index] = cdb[index];
 +		}
 +		uint64_t ucd_phys = list + ucdOffset;
-+		*(uint32_t *)(utrd + 0) = 0x10000000U;
++		uint32_t direction = length ? (to_host ? 2U : 1U) : 0U;
++		*(uint32_t *)(utrd + 0) = 0x10000000U | (direction << 25);
 +		*(uint32_t *)(utrd + 8) = 0x0fU;
 +		*(uint32_t *)(utrd + 16) = (uint32_t)ucd_phys;
 +		*(uint32_t *)(utrd + 20) = (uint32_t)(ucd_phys >> 32);
 +		*(uint32_t *)(utrd + 24) = (512U >> 2) | ((rspOffset >> 2) << 16);
-+		*(uint32_t *)(utrd + 28) = (1024U >> 2) << 16;
++		uint32_t prd_entries = length ? 1U : 0U;
++		*(uint32_t *)(utrd + 28) = prd_entries | ((prdtOffset >> 2) << 16);
++		if (length) {
++			uint64_t data_phys = list + dataOffset;
++			uint8_t *prd = ucd + prdtOffset;
++			*(uint32_t *)(prd + 0) = (uint32_t)data_phys;
++			*(uint32_t *)(prd + 4) = (uint32_t)(data_phys >> 32);
++			*(uint32_t *)(prd + 8) = 0;
++			*(uint32_t *)(prd + 12) = length - 1;
++		}
 +		unixnu_cache_clean(virt, 16384);
 +		hc[0x20 / 4] = 0xffffffffU;
 +		hc[0x58 / 4] = 1;
@@ -185,17 +216,34 @@
 +		return result;
 +	};
 +
-+	uint8_t ssu[6] = { 0x1b, 0x00, 0x00, 0x00, 0x10, 0x00 };   /* START STOP UNIT, power active */
-+	UnixnuUfsResult wake = command(0xd0, ssu, 6);
++	uint8_t ssu[6] = { 0x1b, 0x00, 0x00, 0x00, 0x10, 0x00 };
++	UnixnuUfsResult wake = command(0xd0, ssu, 6, false, 0);
 +	for (unsigned settle = 0; settle < 50; settle++) {
 +		IODelay(1000);
 +	}
 +	uint8_t tur[6] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-+	UnixnuUfsResult read = command(0, tur, 6);
++	UnixnuUfsResult ready = command(0, tur, 6, false, 0);
++	uint8_t gpt_cdb[10] = { 0x28, 0, 0, 0, 0, 1, 0, 0, 1, 0 };
++	UnixnuUfsResult gpt = command(0, gpt_cdb, 10, true, 4096);
++	const uint8_t *gpt_data = virt + dataOffset;
++	uint32_t gpt_sig0 = unixnu_ufs_le32(gpt_data);
++	uint32_t gpt_sig1 = unixnu_ufs_le32(gpt_data + 4);
++	uint64_t gpt_cur = unixnu_ufs_le64(gpt_data + 24);
++	uint64_t gpt_ent = unixnu_ufs_le64(gpt_data + 72);
++	uint32_t gpt_count = unixnu_ufs_le32(gpt_data + 80);
++	/* userdata partition start from board.toml [userdata] first_lba (4K LBA). */
++	uint8_t ud_cdb[10] = { 0x28, 0, 0x00, 0x30, 0x60, 0x00, 0, 0, 1, 0 };
++	UnixnuUfsResult ud = command(0, ud_cdb, 10, true, 4096);
++	const uint8_t *ud_data = virt + dataOffset;
 +	panic("unixnu-ufs-read ssu ocs=%x resp=%02x scsi=%02x tur ocs=%x resp=%02x scsi=%02x\n"
++	    "gpt ocs=%x resp=%02x scsi=%02x sig=%08x %08x cur=%llx ent=%llx cnt=%u\n"
++	    "ud ocs=%x resp=%02x scsi=%02x w=%08x %08x %08x %08x\n"
 +	    "hcs=%08x->%08x is=%08x->%08x dbr=%08x->%08x rsr=%08x list=%llx\n"
 +	    "uic=%08x %08x %08x %08x %08x",
-+	    wake.ocs, wake.response, wake.scsi, read.ocs, read.response, read.scsi,
++	    wake.ocs, wake.response, wake.scsi, ready.ocs, ready.response, ready.scsi,
++	    gpt.ocs, gpt.response, gpt.scsi, gpt_sig0, gpt_sig1, gpt_cur, gpt_ent, gpt_count,
++	    ud.ocs, ud.response, ud.scsi,
++	    unixnu_ufs_le32(ud_data), unixnu_ufs_le32(ud_data + 4), unixnu_ufs_le32(ud_data + 8), unixnu_ufs_le32(ud_data + 12),
 +	    hcs_before, hc[0x30 / 4], is_before, hc[0x20 / 4],
 +	    dbr_before, hc[0x58 / 4], hc[0x60 / 4], list,
 +	    uic[0], uic[1], uic[2], uic[3], uic[4]);
@@ -204,7 +252,7 @@
  kern_return_t
  IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
      dev_t * root, u_int32_t * oflags )
-@@ -711,6 +901,7 @@
+@@ -711,6 +949,7 @@
  	mach_timespec_t     t;
  
  	unixnu_ufs_probe();
