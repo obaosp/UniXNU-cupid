@@ -1,0 +1,151 @@
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -34,6 +34,9 @@
+ #include <IOKit/IONVRAM.h>
+ #include <IOKit/IOPlatformExpert.h>
+ #include <IOKit/IOUserClient.h>
++#include <IOKit/IOMemoryDescriptor.h>
++#include <IOKit/IOMemoryMap.h>
++#include <string.h>
+ #include <libkern/c++/OSAllocation.h>
+ 
+ extern "C" {
+@@ -704,6 +707,130 @@
+ 	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
+ }
+ 
++/*
++ * Read-only SM8450 UFS adopt/read test. Uses the firmware's live request list
++ * (UTRLBA), replaces it with one TEST UNIT READY command and panics with the
++ * UFSHCI result. It writes only the controller's own list/registers; no device
++ * data is read and nothing is persisted.
++ */
++static void
++unixnu_cache_clean(const void *start, size_t length)
++{
++	uintptr_t p = (uintptr_t)start & ~(uintptr_t)63;
++	uintptr_t end = ((uintptr_t)start + length + 63) & ~(uintptr_t)63;
++	for (; p < end; p += 64) {
++		__asm__ volatile("dc cvac, %0" :: "r"(p) : "memory");
++	}
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++
++static void
++unixnu_cache_clean_invalidate(const void *start, size_t length)
++{
++	uintptr_t p = (uintptr_t)start & ~(uintptr_t)63;
++	uintptr_t end = ((uintptr_t)start + length + 63) & ~(uintptr_t)63;
++	for (; p < end; p += 64) {
++		__asm__ volatile("dc civac, %0" :: "r"(p) : "memory");
++	}
++	__asm__ volatile("dsb sy" ::: "memory");
++}
++
++static void
++unixnu_ufs_read_probe(void)
++{
++	unsigned int enabled = 0;
++	if (!PE_parse_boot_argn("unixnu-ufs-read", &enabled, sizeof(enabled)) || !enabled) {
++		return;
++	}
++	volatile uint32_t *hc = (volatile uint32_t *)ml_io_map(0x1d84000, 0x3000);
++	if (!hc) {
++		panic("unixnu-ufs-read: controller map failed");
++	}
++	uint64_t list = ((uint64_t)hc[0x54 / 4] << 32) | hc[0x50 / 4];
++	if (!list || (list & 0xfff)) {
++		panic("unixnu-ufs-read: no firmware request list (%llx)", list);
++	}
++	IOMemoryDescriptor *region = IOMemoryDescriptor::withPhysicalAddress((IOPhysicalAddress)list, 16384, kIODirectionInOut);
++	if (!region) {
++		panic("unixnu-ufs-read: list descriptor failed (%llx)", list);
++	}
++	IOMemoryMap *map = region->map(kIOMapAnywhere);
++	region->release();
++	if (!map) {
++		panic("unixnu-ufs-read: list map failed (%llx)", list);
++	}
++	uint8_t *virt = (uint8_t *)map->getVirtualAddress();
++	const uint32_t ucdOffset = 4096, rspOffset = 512;
++	memset(virt, 0, 16384);
++	unixnu_cache_clean(virt, 16384);
++
++	uint32_t hcs_before = hc[0x30 / 4];
++	uint32_t is_before = hc[0x20 / 4];
++	uint32_t dbr_before = hc[0x58 / 4];
++	if (dbr_before) {
++		panic("unixnu-ufs-read: firmware command outstanding dbr=%08x hcs=%08x", dbr_before, hcs_before);
++	}
++	hc[0x24 / 4] = 0;               /* mask interrupts */
++	hc[0x60 / 4] = 0;               /* stop the firmware request list */
++	__asm__ volatile("dsb sy" ::: "memory");
++	unsigned int loops = 10000;
++	while ((hc[0x60 / 4] & 1) && loops--) {
++		IODelay(10);
++	}
++	if (hc[0x60 / 4] & 1) {
++		panic("unixnu-ufs-read: request list did not stop");
++	}
++	hc[0x50 / 4] = (uint32_t)list;
++	hc[0x54 / 4] = (uint32_t)(list >> 32);
++	hc[0x20 / 4] = 0xffffffffU;
++	hc[0x60 / 4] = 1;
++	loops = 100000;
++	while (!(hc[0x30 / 4] & 2) && loops--) {
++		IODelay(10);
++	}
++	if (!(hc[0x30 / 4] & 2)) {
++		panic("unixnu-ufs-read: request list not ready hcs=%08x", hc[0x30 / 4]);
++	}
++
++	/* Request list entry 0: TEST UNIT READY, LUN 0, no data. */
++	uint8_t *utrd = virt;
++	uint8_t *ucd = virt + ucdOffset;
++	ucd[0] = 0x01;                  /* COMMAND UPIU */
++	ucd[1] = 0x00;                  /* flags: no data */
++	ucd[2] = 0x00;                  /* LUN 0 */
++	ucd[3] = 0x00;                  /* task tag 0 */
++	/* ucd[16..21] CDB is all zero: TEST UNIT READY */
++	uint64_t ucd_phys = list + ucdOffset;
++	*(uint32_t *)(utrd + 0) = 0x10000000U;
++	*(uint32_t *)(utrd + 8) = 0x0fU;
++	*(uint32_t *)(utrd + 16) = (uint32_t)ucd_phys;
++	*(uint32_t *)(utrd + 20) = (uint32_t)(ucd_phys >> 32);
++	*(uint32_t *)(utrd + 24) = (512U >> 2) | ((rspOffset >> 2) << 16);
++	*(uint32_t *)(utrd + 28) = (1024U >> 2) << 16;   /* no PRDT entries */
++	unixnu_cache_clean(virt, 16384);
++	hc[0x20 / 4] = 0xffffffffU;
++	hc[0x58 / 4] = 1;               /* doorbell slot 0 */
++	bool done = false;
++	for (loops = 0; loops < 100000; loops++) {
++		if (!(hc[0x58 / 4] & 1)) {
++			done = true;
++			break;
++		}
++		IODelay(1);
++	}
++	unixnu_cache_clean_invalidate(virt, 16384);
++	uint32_t ocs = *(volatile uint32_t *)(utrd + 8) & 0xff;
++	const uint8_t *rsp = ucd + rspOffset;
++	panic("unixnu-ufs-read tur done=%u ocs=%x resp=%02x scsi=%02x\n"
++	    "hcs=%08x->%08x is=%08x->%08x dbr=%08x->%08x rsr=%08x list=%llx\n"
++	    "rsp=%08x %08x %08x %08x",
++	    done, ocs, rsp[6], rsp[7],
++	    hcs_before, hc[0x30 / 4], is_before, hc[0x20 / 4],
++	    dbr_before, hc[0x58 / 4], hc[0x60 / 4], list,
++	    ((const uint32_t *)rsp)[0], ((const uint32_t *)rsp)[1],
++	    ((const uint32_t *)rsp)[2], ((const uint32_t *)rsp)[3]);
++}
++
+ kern_return_t
+ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+     dev_t * root, u_int32_t * oflags )
+@@ -711,6 +838,7 @@
+ 	mach_timespec_t     t;
+ 
+ 	unixnu_ufs_probe();
++	unixnu_ufs_read_probe();
+ 	IOService *         service;
+ 	IORegistryEntry *   regEntry;
+ 	OSDictionary *      matching = NULL;
