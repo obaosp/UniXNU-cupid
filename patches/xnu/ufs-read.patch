@@ -1,16 +1,15 @@
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -34,6 +34,9 @@
+@@ -34,6 +34,8 @@
  #include <IOKit/IONVRAM.h>
  #include <IOKit/IOPlatformExpert.h>
  #include <IOKit/IOUserClient.h>
 +#include <IOKit/IOMemoryDescriptor.h>
-+#include <IOKit/IOMemoryMap.h>
 +#include <string.h>
  #include <libkern/c++/OSAllocation.h>
  
  extern "C" {
-@@ -704,6 +707,130 @@
+@@ -704,6 +706,130 @@
  	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
  }
  
@@ -141,7 +140,7 @@
  kern_return_t
  IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
      dev_t * root, u_int32_t * oflags )
-@@ -711,6 +838,7 @@
+@@ -711,6 +837,7 @@
  	mach_timespec_t     t;
  
  	unixnu_ufs_probe();
