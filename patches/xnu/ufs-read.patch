@@ -9,7 +9,7 @@
  #include <libkern/c++/OSAllocation.h>
  
  extern "C" {
-@@ -704,6 +706,130 @@
+@@ -704,6 +706,139 @@
  	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
  }
  
@@ -19,6 +19,15 @@
 + * UFSHCI result. It writes only the controller's own list/registers; no device
 + * data is read and nothing is persisted.
 + */
++static void
++unixnu_zero32(void *start, size_t length)
++{
++	volatile uint32_t *p = (volatile uint32_t *)start;
++	for (size_t index = 0; index < length / 4; index++) {
++		p[index] = 0;
++	}
++}
++
 +static void
 +unixnu_cache_clean(const void *start, size_t length)
 +{
@@ -67,7 +76,7 @@
 +	}
 +	uint8_t *virt = (uint8_t *)map->getVirtualAddress();
 +	const uint32_t ucdOffset = 4096, rspOffset = 512;
-+	memset(virt, 0, 16384);
++	unixnu_zero32(virt, 16384);
 +	unixnu_cache_clean(virt, 16384);
 +
 +	uint32_t hcs_before = hc[0x30 / 4];
@@ -140,7 +149,7 @@
  kern_return_t
  IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
      dev_t * root, u_int32_t * oflags )
-@@ -711,6 +837,7 @@
+@@ -711,6 +846,7 @@
  	mach_timespec_t     t;
  
  	unixnu_ufs_probe();
