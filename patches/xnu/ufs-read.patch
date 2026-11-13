@@ -1,15 +1,16 @@
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -34,6 +34,8 @@
+@@ -34,6 +34,9 @@
  #include <IOKit/IONVRAM.h>
  #include <IOKit/IOPlatformExpert.h>
  #include <IOKit/IOUserClient.h>
 +#include <IOKit/IOMemoryDescriptor.h>
++#include "SmmuTakeover.h"
 +#include <string.h>
  #include <libkern/c++/OSAllocation.h>
  
  extern "C" {
-@@ -704,6 +706,139 @@
+@@ -704,6 +707,159 @@
  	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
  }
  
@@ -95,6 +96,26 @@
 +	if (hc[0x60 / 4] & 1) {
 +		panic("unixnu-ufs-read: request list did not stop");
 +	}
++	uintptr_t smmu = (uintptr_t)ml_io_map(0x15000000, 0xd0000);
++	if (!smmu) {
++		panic("unixnu-ufs-read: SMMU map failed");
++	}
++	auto smmu_read = [smmu](unsigned offset) {
++		return *(volatile uint32_t *)(smmu + offset);
++	};
++	auto smmu_write = [smmu](unsigned offset, uint32_t value) {
++		*(volatile uint32_t *)(smmu + offset) = value;
++		__asm__ volatile("dsb sy" ::: "memory");
++	};
++	UfsSmmuPlan plan = planUfsSmmu(0x60, list, 16384, smmu_read);
++	if (plan.error) {
++		panic("unixnu-ufs-read: SMMU plan: %s slot=%u smr=%x s2cr=%x", plan.error, plan.slot, plan.smr, plan.s2cr);
++	}
++	const char *smmu_error = configureUfsSmmu(plan, 0x60, smmu_read, smmu_write);
++	if (smmu_error) {
++		panic("unixnu-ufs-read: SMMU configure: %s idx=%u bank=%u", smmu_error, plan.slot, plan.bank);
++	}
++
 +	hc[0x50 / 4] = (uint32_t)list;
 +	hc[0x54 / 4] = (uint32_t)(list >> 32);
 +	hc[0x20 / 4] = 0xffffffffU;
@@ -149,7 +170,7 @@
  kern_return_t
  IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
      dev_t * root, u_int32_t * oflags )
-@@ -711,6 +846,7 @@
+@@ -711,6 +867,7 @@
  	mach_timespec_t     t;
  
  	unixnu_ufs_probe();

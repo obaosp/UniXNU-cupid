@@ -1,9 +1,10 @@
-# iOS 27 bring-up: the iPhone17,2 24A446 kernel is xnu-13432.2.10; the patches below are the
-# public 12377.121.6 source. Prelink against the real kernelcache must pair every target without the
-# 13432 shims; the 24A446 fixture and the two iOS 27-only patches are gone.
+# iOS 27 bring-up: the iPhone17,2 24A446 kernel is xnu-13432.2.10; the patches below are
+# applied to the public 12377.121.6 source. Prelink pairs the reviewed 24A446 fixture and
+# reports any remaining target; the UFS patches are diagnostic/probe only.
 no-assert-strings.patch
 image4-flags-shim.patch
 fileset-register-report.patch
 timers-avoid-trapped-physical-timer.patch
 ufs-probe.patch
+ufs-smmu.patch
 ufs-read.patch
