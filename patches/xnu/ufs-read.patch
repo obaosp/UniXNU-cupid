@@ -1,16 +1,15 @@
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
-@@ -34,6 +34,9 @@
+@@ -34,6 +34,8 @@
  #include <IOKit/IONVRAM.h>
  #include <IOKit/IOPlatformExpert.h>
  #include <IOKit/IOUserClient.h>
 +#include <IOKit/IOMemoryDescriptor.h>
-+#include "SmmuTakeover.h"
 +#include <string.h>
  #include <libkern/c++/OSAllocation.h>
  
  extern "C" {
-@@ -704,6 +707,159 @@
+@@ -704,6 +706,170 @@
  	    hc[0x54 / 4], hc[0x58 / 4], hc[0x60 / 4]);
  }
  
@@ -51,6 +50,12 @@
 +	__asm__ volatile("dsb sy" ::: "memory");
 +}
 +
++struct UnixnuUfsResult {
++	uint32_t ocs;
++	uint32_t response;
++	uint32_t scsi;
++};
++
 +static void
 +unixnu_ufs_read_probe(void)
 +{
@@ -83,8 +88,13 @@
 +	uint32_t hcs_before = hc[0x30 / 4];
 +	uint32_t is_before = hc[0x20 / 4];
 +	uint32_t dbr_before = hc[0x58 / 4];
++	uint32_t uic[5];
++	for (unsigned i = 0; i < 5; i++) {
++		uic[i] = hc[(0x38 + 4 * i) / 4];
++	}
 +	if (dbr_before) {
-+		panic("unixnu-ufs-read: firmware command outstanding dbr=%08x hcs=%08x", dbr_before, hcs_before);
++		panic("unixnu-ufs-read: firmware command outstanding dbr=%08x hcs=%08x uic=%08x %08x %08x %08x %08x",
++		    dbr_before, hcs_before, uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
 +	hc[0x24 / 4] = 0;               /* mask interrupts */
 +	hc[0x60 / 4] = 0;               /* stop the firmware request list */
@@ -94,28 +104,9 @@
 +		IODelay(10);
 +	}
 +	if (hc[0x60 / 4] & 1) {
-+		panic("unixnu-ufs-read: request list did not stop");
++		panic("unixnu-ufs-read: request list did not stop uic=%08x %08x %08x %08x %08x",
++		    uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
-+	uintptr_t smmu = (uintptr_t)ml_io_map(0x15000000, 0xd0000);
-+	if (!smmu) {
-+		panic("unixnu-ufs-read: SMMU map failed");
-+	}
-+	auto smmu_read = [smmu](unsigned offset) {
-+		return *(volatile uint32_t *)(smmu + offset);
-+	};
-+	auto smmu_write = [smmu](unsigned offset, uint32_t value) {
-+		*(volatile uint32_t *)(smmu + offset) = value;
-+		__asm__ volatile("dsb sy" ::: "memory");
-+	};
-+	UfsSmmuPlan plan = planUfsSmmu(0x60, list, 16384, smmu_read);
-+	if (plan.error) {
-+		panic("unixnu-ufs-read: SMMU plan: %s slot=%u smr=%x s2cr=%x", plan.error, plan.slot, plan.smr, plan.s2cr);
-+	}
-+	const char *smmu_error = configureUfsSmmu(plan, 0x60, smmu_read, smmu_write);
-+	if (smmu_error) {
-+		panic("unixnu-ufs-read: SMMU configure: %s idx=%u bank=%u", smmu_error, plan.slot, plan.bank);
-+	}
-+
 +	hc[0x50 / 4] = (uint32_t)list;
 +	hc[0x54 / 4] = (uint32_t)(list >> 32);
 +	hc[0x20 / 4] = 0xffffffffU;
@@ -125,52 +116,71 @@
 +		IODelay(10);
 +	}
 +	if (!(hc[0x30 / 4] & 2)) {
-+		panic("unixnu-ufs-read: request list not ready hcs=%08x", hc[0x30 / 4]);
++		panic("unixnu-ufs-read: request list not ready hcs=%08x uic=%08x %08x %08x %08x %08x",
++		    hc[0x30 / 4], uic[0], uic[1], uic[2], uic[3], uic[4]);
 +	}
 +
-+	/* Request list entry 0: TEST UNIT READY, LUN 0, no data. */
-+	uint8_t *utrd = virt;
-+	uint8_t *ucd = virt + ucdOffset;
-+	ucd[0] = 0x01;                  /* COMMAND UPIU */
-+	ucd[1] = 0x00;                  /* flags: no data */
-+	ucd[2] = 0x00;                  /* LUN 0 */
-+	ucd[3] = 0x00;                  /* task tag 0 */
-+	/* ucd[16..21] CDB is all zero: TEST UNIT READY */
-+	uint64_t ucd_phys = list + ucdOffset;
-+	*(uint32_t *)(utrd + 0) = 0x10000000U;
-+	*(uint32_t *)(utrd + 8) = 0x0fU;
-+	*(uint32_t *)(utrd + 16) = (uint32_t)ucd_phys;
-+	*(uint32_t *)(utrd + 20) = (uint32_t)(ucd_phys >> 32);
-+	*(uint32_t *)(utrd + 24) = (512U >> 2) | ((rspOffset >> 2) << 16);
-+	*(uint32_t *)(utrd + 28) = (1024U >> 2) << 16;   /* no PRDT entries */
-+	unixnu_cache_clean(virt, 16384);
-+	hc[0x20 / 4] = 0xffffffffU;
-+	hc[0x58 / 4] = 1;               /* doorbell slot 0 */
-+	bool done = false;
-+	for (loops = 0; loops < 100000; loops++) {
-+		if (!(hc[0x58 / 4] & 1)) {
-+			done = true;
-+			break;
++	auto command = [&](uint8_t lun, const uint8_t *cdb, unsigned cdb_length) -> UnixnuUfsResult {
++		uint8_t *utrd = virt;
++		uint8_t *ucd = virt + ucdOffset;
++		unixnu_zero32(utrd, 32);
++		unixnu_zero32(ucd, 1024 + 16);
++		ucd[0] = 0x01;          /* COMMAND UPIU */
++		ucd[1] = 0x00;          /* no data */
++		ucd[2] = lun;
++		ucd[3] = 0;             /* task tag */
++		for (unsigned index = 0; index < cdb_length; index++) {
++			ucd[16 + index] = cdb[index];
 +		}
-+		IODelay(1);
++		uint64_t ucd_phys = list + ucdOffset;
++		*(uint32_t *)(utrd + 0) = 0x10000000U;
++		*(uint32_t *)(utrd + 8) = 0x0fU;
++		*(uint32_t *)(utrd + 16) = (uint32_t)ucd_phys;
++		*(uint32_t *)(utrd + 20) = (uint32_t)(ucd_phys >> 32);
++		*(uint32_t *)(utrd + 24) = (512U >> 2) | ((rspOffset >> 2) << 16);
++		*(uint32_t *)(utrd + 28) = (1024U >> 2) << 16;
++		unixnu_cache_clean(virt, 16384);
++		hc[0x20 / 4] = 0xffffffffU;
++		hc[0x58 / 4] = 1;
++		bool done = false;
++		for (unsigned spin = 0; spin < 100000; spin++) {
++			if (!(hc[0x58 / 4] & 1)) {
++				done = true;
++				break;
++			}
++			IODelay(1);
++		}
++		unixnu_cache_clean_invalidate(virt, 16384);
++		UnixnuUfsResult result = { 0xf, 0xff, 0xff };
++		if (done) {
++			result.ocs = *(volatile uint32_t *)(utrd + 8) & 0xff;
++			const uint8_t *rsp = ucd + rspOffset;
++			result.response = rsp[6];
++			result.scsi = rsp[7];
++		}
++		return result;
++	};
++
++	uint8_t ssu[6] = { 0x1b, 0x00, 0x00, 0x00, 0x10, 0x00 };   /* START STOP UNIT, power active */
++	UnixnuUfsResult wake = command(0xd0, ssu, 6);
++	for (unsigned settle = 0; settle < 50; settle++) {
++		IODelay(1000);
 +	}
-+	unixnu_cache_clean_invalidate(virt, 16384);
-+	uint32_t ocs = *(volatile uint32_t *)(utrd + 8) & 0xff;
-+	const uint8_t *rsp = ucd + rspOffset;
-+	panic("unixnu-ufs-read tur done=%u ocs=%x resp=%02x scsi=%02x\n"
++	uint8_t tur[6] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
++	UnixnuUfsResult read = command(0, tur, 6);
++	panic("unixnu-ufs-read ssu ocs=%x resp=%02x scsi=%02x tur ocs=%x resp=%02x scsi=%02x\n"
 +	    "hcs=%08x->%08x is=%08x->%08x dbr=%08x->%08x rsr=%08x list=%llx\n"
-+	    "rsp=%08x %08x %08x %08x",
-+	    done, ocs, rsp[6], rsp[7],
++	    "uic=%08x %08x %08x %08x %08x",
++	    wake.ocs, wake.response, wake.scsi, read.ocs, read.response, read.scsi,
 +	    hcs_before, hc[0x30 / 4], is_before, hc[0x20 / 4],
 +	    dbr_before, hc[0x58 / 4], hc[0x60 / 4], list,
-+	    ((const uint32_t *)rsp)[0], ((const uint32_t *)rsp)[1],
-+	    ((const uint32_t *)rsp)[2], ((const uint32_t *)rsp)[3]);
++	    uic[0], uic[1], uic[2], uic[3], uic[4]);
 +}
 +
  kern_return_t
  IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
      dev_t * root, u_int32_t * oflags )
-@@ -711,6 +867,7 @@
+@@ -711,6 +877,7 @@
  	mach_timespec_t     t;
  
  	unixnu_ufs_probe();
