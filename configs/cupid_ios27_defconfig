@@ -7,8 +7,11 @@ CONFIG_XNU_CRYPTO_BOOTSTRAP="source"
 CONFIG_XNU_DT_PANIC_REGION=y
 CONFIG_XNU_ARMVIRT_PLATFORM=n
 CONFIG_XNU_KERNEL_CHAINED_FIXUPS=y
-# No UFS component is selected yet: ShengUfs matches "qcom,sm8550-ufshc" and
-# uses SM8550 GCC offsets, so it must not be pointed at SM8450.
-# CONFIG_XNU_NATIVE_UFS is not set
+# SM8450 UFS uses the waipio-adapted ShengUfs tree below.
 # CONFIG_XNU_NATIVE_ADRENO is not set
 # CONFIG_XNU_NATIVE_LEGACY_DISPLAY is not set
+# SM8450 UFS source storage: ShengUfs tree adapted to waipio; owner policies
+# are bypassed for the first root bring-up (build-sheng-source-storage.py --unverified).
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_EXTRA_LD_ARCHIVES="-Wl,-force_load,{tree}/build/sheng-source-storage/libShengSourceStorage.a"
+CONFIG_XNU_SOURCE_STORAGE=y

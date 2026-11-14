@@ -24,7 +24,7 @@ lba_bytes = 4096
 [components]
 # Stage 0. ArmDTPlatform, ArmCpu and XnuPrelink also come from the arm64e arch
 # profile; they are repeated here because arrays replace inherited arrays.
-include = ["ArmDTPlatform", "ArmCpu", "XnuPrelink", "DarwinBoot"]
+include = ["ArmDTPlatform", "ArmCpu", "XnuPrelink", "DarwinBoot", "ShengUfs"]
 
 [kernel]
 defconfig = "cupid_ios27_defconfig"
@@ -35,6 +35,7 @@ archives = [
   "component:ArmCpu",
   "build-libpthread-kernel.py",
   "build-fileset-release-reference.py --tree . --lto",
+  "build-sheng-source-storage.py --unverified",
 ]
 config_fragments = ["arch:configs/common.config", "soc:configs/sm8450.config", "os:configs/ios.config"]
 patch_series = [
@@ -42,6 +43,7 @@ patch_series = [
   "soc:patches/xnu-12377/series",
   "os:patches/xnu/series",
   "device:patches/xnu/series",
+  "device:patches/xnu-12377/series",
 ]
 
 [device_tree]
