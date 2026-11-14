@@ -4,3 +4,14 @@ kind = "soc"
 git = "https://github.com/obaosp/UniXNU-sm8450-common.git"
 # Filled with the reviewed commit of this port's SoC repository.
 commit = "156e46092b0afa00f5d3d8e4ebdb0b6a5a09a796"
+
+[[source]]
+name = "IOStorageFamily"
+kind = "refer"
+git = "https://github.com/apple-oss-distributions/IOStorageFamily.git"
+ref = "main"
+# build-sheng-source-storage.py (and its prepare-storage-headers helper) requires
+# exactly this public headers revision. UniXNU main moved the base feed to
+# e45fbe3, which the builder refuses, so the device pins the revision the
+# source-storage ABI was compiled against.
+commit = "7edb88fbae296fb7c8ce2f64e115e116e566d51c"

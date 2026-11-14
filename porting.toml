@@ -37,6 +37,7 @@ procedure = [
     "Run .github/workflows/userdata.yml on a macOS runner to build the iOS 27 userdata image; download the chunks and flash it with fastboot flash userdata.",
 ]
 findings = [
+    "feeds.toml pins refer/IOStorageFamily at 7edb88fb: build-sheng-source-storage.py hardcodes that public-headers revision and prepare-storage-headers.py refuses any other checkout, while UniXNU main moved the base feed to e45fbe3. The source is only used for the storage ABI headers, not a binary.",
     "The upstream 24A446 fixture's data entries: the 13 vnodeop_desc descriptors are retargeted to the iPhone 27 collection by their unique vnop_* name strings and vdesc_name slots; the 8 metaclass slots and _gIODTPHandleKey, _audio_active, _tk_rawcc, _tk_nin and _gPESerialBaud remain to be retargeted by the reference data map/source consumers. notes/IOS27-SHENG.md records the fixture/recipe, the generic sheng 24A446 bring-up hunks and the relevant 4 KiB/arm64e/prelink/security/bring-up docs. ",
     "An iPhone profile is required for a phone: iPadOS presents iPad product identity, idiom and display assumptions that SpringBoard and UIKit read from /product.",
     "Arrays replace inherited arrays: board.toml repeats every selected component, configuration fragment and patch series entry.",
