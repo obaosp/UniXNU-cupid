@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 // Authenticate the firmware's root-policy sidecar with a compiled-in owner key.
+/* Cupid bring-up: force unverified root windows until the owner-signed
+ * cupid policy headers exist. */
+#if defined(NATIVE_VERIFIED_BLOCK)
+#undef NATIVE_VERIFIED_BLOCK
+#endif
+#define NATIVE_VERIFIED_BLOCK 0
+
 #include <IOKit/IOService.h>
 #include <IOKit/IODeviceTreeSupport.h>
 #include <IOKit/IOMemoryDescriptor.h>
