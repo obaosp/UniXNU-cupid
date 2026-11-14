@@ -35,6 +35,7 @@ archives = [
   "component:ArmCpu",
   "build-libpthread-kernel.py",
   "build-fileset-release-reference.py --tree . --lto",
+  "component:ShengUfs",
   "build-sheng-source-storage.py --policy-dir scripts/policies/cupid-27.0.1-24A446",
 ]
 config_fragments = ["arch:configs/common.config", "soc:configs/sm8450.config", "os:configs/ios.config"]
@@ -83,7 +84,7 @@ loader = "firmware"
 title = "iOS 27"
 dram_size = "0x80000000"
 panic_screen = true
-kernel_args = ["-v", "serial=3", "debug=0x14e", "kt_fixed_zones=120", "-no_slto_panic", "use_contiguous_hint=0", "unixnu-ufs-read=1"]
+kernel_args = ["-v", "serial=3", "debug=0x14e", "kt_fixed_zones=120", "-no_slto_panic", "use_contiguous_hint=0", "native-source-storage=1", "native-ufs-root=1"]
 
 [payload.adt]
 # SM8450 msm-id 457 (0x1C9), from the vendor DTS qcom,msm-id.
