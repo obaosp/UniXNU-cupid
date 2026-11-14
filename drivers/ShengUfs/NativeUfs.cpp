@@ -2693,6 +2693,14 @@ static void publishThread (void *, wait_result_t)
     bool wait (unsigned index) {
       NativeUfsBlock *device = gPendingDevice[index];
       const char *uuid = gPendingUuid[index];
+      if (!uuid[0]) {
+        // No signed identity in this build: the window was started and the
+        // original APFS kext owns the volume UUID from here.
+        gRootDiagnostic.stage = "media publication (unverified)";
+        gRootDiagnostic.publicationPhase = static_cast<unsigned> (UfsRootPhase::Media);
+        gRootDiagnostic.publicationWindow = index;
+        return true;
+      }
       gRootDiagnostic.stage = "media publication";
       gRootDiagnostic.publicationPhase = static_cast<unsigned> (UfsRootPhase::Media);
       gRootDiagnostic.publicationWindow = index;
@@ -3018,7 +3026,10 @@ bool NativeUfs::startRoot (IOService *provider)
       }
       return true;
 #else
-      return false; // Root publication requires owner verification in every build.
+      // Cupid bring-up without owner policies: there is no signed UUID to gate
+      // on. Publish both windows; the original APFS kext publishes the real
+      // volume UUIDs, and IOFindBSDRoot matches /chosen/root-matching.
+      return true;
 #endif
     }
     bool schedule () {
