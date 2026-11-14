@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
-// Native sheng SM8550 UFS bring-up. Default-off: no MMIO is touched unless
+// Native sheng SM8450 (cupid) UFS bring-up. Default-off: no MMIO is touched unless
 // native-ufs-probe=1 is present. This is a register probe, not a storage driver.
 /* Cupid bring-up: force unverified root windows until the owner-signed
  * cupid policy headers exist. */
@@ -855,7 +855,7 @@ void NativeUfs::inspectSmmu (void)
       valid++;
       typeCount[(s2cr >> 16) & 3]++;
       uint32_t mask = (smr >> 16) & 0x7fff;
-      if (match == 0xffff && (((smr ^ 0x60U) & 0x7fffU) & ~mask) == 0) {
+      if (match == 0xffff && (((smr ^ 0xe0U) & 0x7fffU) & ~mask) == 0) {
         match = index;
         matchSmr = smr;
         matchS2cr = s2cr;
@@ -865,7 +865,7 @@ void NativeUfs::inspectSmmu (void)
   panic ("NATIVE_UFS smmu\n"
          "scr0=%08x idr0=%08x idr1=%08x gfsr=%08x\n"
          "nsmr=%u valid=%u types t0=%u t1=%u t2=%u\n"
-         "sid0x60 match=%x smr=%08x s2cr=%08x",
+         "sid0xe0 match=%x smr=%08x s2cr=%08x",
          scr0, idr0, idr1, gfsr, count, valid, typeCount[0], typeCount[1], typeCount[2],
          match, matchSmr, matchS2cr);
 }

@@ -24,7 +24,7 @@ lba_bytes = 4096
 [components]
 # Stage 0. ArmDTPlatform, ArmCpu and XnuPrelink also come from the arm64e arch
 # profile; they are repeated here because arrays replace inherited arrays.
-include = ["ArmDTPlatform", "ArmCpu", "XnuPrelink", "DarwinBoot", "ShengUfs"]
+include = ["ArmDTPlatform", "ArmCpu", "XnuPrelink", "DarwinBoot", "ShengUfs", "RamBlock"]
 
 [kernel]
 defconfig = "cupid_ios27_defconfig"
@@ -36,7 +36,8 @@ archives = [
   "build-libpthread-kernel.py",
   "build-fileset-release-reference.py --tree . --lto",
   "component:ShengUfs",
-  "build-sheng-source-storage.py --policy-dir scripts/policies/cupid-27.0.1-24A446",
+  "component:RamBlock",
+  "build-sheng-source-storage.py --policy-dir scripts/policies/ipados-27.0.1-24A446",
 ]
 config_fragments = ["arch:configs/common.config", "soc:configs/sm8450.config", "os:configs/ios.config"]
 patch_series = [
