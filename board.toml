@@ -4,7 +4,11 @@ schema_version = 2
 name = "cupid"
 soc = "SM8450"
 description = "Xiaomi 12 (cupid)"
-kit = "cupid"
+# The device package is linked as kits/<kit>. build-sheng-source-storage.py
+# (the sheng UFS runtime builder) hardcodes kits/sheng when it runs from the
+# assembled tree, so the kit folder must carry that name; the board itself is
+# still cupid. This only changes the package folder, not any output name.
+kit = "sheng"
 soc_source = "sm8450"
 # iPhone-flavoured iOS 27 profile. The profile is shipped in this repository
 # under profiles/os/ and installed into the UniXNU checkout by
