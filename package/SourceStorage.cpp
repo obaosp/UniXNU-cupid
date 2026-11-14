@@ -12,16 +12,14 @@
 #include <kern/thread.h>
 #include <mach/vm_types.h>
 
-// Cupid bring-up: sheng's ArmCpu fork exports the SPI mask helpers the UFS
+// Cupid bring-up: sheng's ArmCpu fork exports the SPI mask helper the UFS
 // interrupt path probes, and the payload-addon-release patch exports
-// ml_static_mfree_prepare for NativeRamBlock. Neither component is selected
-// here, and taking the address of an undefined weak import is a hard link
-// error on arm64e (authenticated pointer), so provide the conservative
-// definitions: no interrupt mode, no loader-memory release.
-extern "C" IOReturn armcpu_spi_attach(uint32_t, bool, void (*)(void *), void *, uint32_t *, uint64_t *)
-{
-    return kIOReturnUnsupported;
-}
+// ml_static_mfree_prepare for NativeRamBlock. The base ArmCpu already provides
+// armcpu_spi_attach; only the mask helper is absent. Taking the address of an
+// undefined weak import is a hard link error on arm64e (authenticated pointer),
+// so provide the conservative definitions: the attach succeeds but mask
+// refuses, which leaves the transport in its working polled mode, and loader
+// memory is never released.
 extern "C" IOReturn armcpu_spi_mask(uint32_t, bool)
 {
     return kIOReturnUnsupported;
