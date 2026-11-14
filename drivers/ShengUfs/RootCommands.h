@@ -121,7 +121,11 @@ static IOReturn hostIssue (const UfsSlot &slot, uint32_t direction, uint32_t dat
   gRootDiagnostic.sense = 0;
   uint8_t *utrd = slot.utrd;
   uint64_t ucdPhys = slot.ucdPhys;
-  uint32_t *words = reinterpret_cast<uint32_t *> (utrd);
+  // Volatile: the descriptor is non-cacheable DMA memory (the request list is
+  // write-combined), and clang otherwise merges the dword writes into 8-byte
+  // stores at offset 4/12/20, which are alignment faults on device memory
+  // (cupid SM8450 media abort 2026-11-14).
+  volatile uint32_t *words = reinterpret_cast<volatile uint32_t *> (utrd);
   for (unsigned index = 0; index < 8; index++) {
     words[index] = 0;
   }
@@ -215,7 +219,7 @@ static bool hostClearUcd (const UfsSlot &slot)
     recordTransport (kIOReturnIOError, 15);
     return false;
   }
-  uint32_t *words = reinterpret_cast<uint32_t *> (slot.ucd);
+  volatile uint32_t *words = reinterpret_cast<volatile uint32_t *> (slot.ucd);
   for (unsigned index = 0; index < (kPrdtOffset + 16) / 4; index++) {
     words[index] = 0;
   }
