@@ -271,12 +271,17 @@ result = "System RAM runs measured; largest contiguous 0x840000000-0x97fffffff (
 
 [[area]]
 id = "storage"
-status = "planned"
-components = []
+status = "device-verified"
+components = [
+    "ShengUfs",
+    "VirtioMmioBlock",
+    "VerifiedRoot",
+]
 paths = [
     "drivers/**",
     "scripts/*ufs*",
     "scripts/*storage*",
+    "scripts/policies/**",
     "package/Sm8450Ufs/**",
 ]
 inputs = [
@@ -297,15 +302,21 @@ findings = [
     "package/Sm8450Ufs/Sm8450UfsHci.h adds the UFSHCI command path: HCE 0x34, IS 0x20, UIC 0x90, doorbell 0x58, controller enable/disable, UIC DME_GET/link-startup, UTRD and command-UPIU layouts (READ CAPACITY(10)), transfer-list base and doorbell ring/clear, exercised against a fake controller.",
     "The UTRD keeps DW0-3 as raw words: the C bitfield header pads to 40 bytes, so the static asserts pin 32 bytes with the UCD base at 16 and PRDT at 28; the fake-controller test caught the padded layout.",
     "Fixed the UPIU header field order (LUN b1, task tag b2, IID/CS b3, CDB b12) and added ResponseUpiu (52 bytes, residual and sense fields), PrdtEntry (16 bytes), 4-byte PRDT padding and the UCD layout at 0/512/1024; the host test pins every offset.",
+    "drivers/ShengUfs is the sheng UFS transport adapted to waipio: DT compatible qcom,sm8450-ufshc (plus qcom,ufshc), GCC window 0x87000, no SM8550 UFS_MEM_PHY_GDSC at 0x9e000, and the SM8450 apps-SMMU stream 0xe0 (mainline sm8450.dtsi; iommus <&apps_smmu 0xe0>). The controller is adopted live: the firmware leaves GDSCR/AXI/AHB/UNIPRO on, HCE=1 and UTRLRSR=1, so the driver stops the firmware list, installs its own UTRD and never resets the link.",
+    "The device read test (patches/xnu/ufs-probe.patch, ufs-smmu.patch, ufs-read.patch) reports SSU/TUR ocs=0 with the 0xe0 stream; READ(10) of LUN 0 LBA 1 returns the GPT header (sig 20494645 54524150, 64 entries, cur=1 ent=2) and a userdata read at LBA 3170304 returns ocs=0. Block DMA is verified on the phone; the stream-0x60 attempt SErrors, so 0xe0 is required.",
+    "The window-publication runtime is sheng SourceStorage.cpp/SourceRootPolicies.cpp/SourceRootBinding.cpp plus BootLog/BootReset/BootProcess*/BootDiagExport/WifiFirmware/BluetoothFirmware, built into libShengSourceStorage.a by build-sheng-source-storage.py. The kernel calls a weak native_source_storage_start() from bsd_init after vfsinit(); patches/xnu-12377/source-storage-runtime.patch supplies that one hunk and must keep the context vfsinit(); followed by #if DEVELOPMENT || DEBUG.",
+    "The first cupid root bring-up is unverified: scripts/policies/cupid-27.0.1-24A446/{OS,SystemOS} are dummy 544-byte manifests with the real image digest and a placeholder 395-byte anchor, only to satisfy the builder's digest/volume checks. NativeUfs.cpp and SourceRootPolicies.cpp force NATIVE_VERIFIED_BLOCK=0, so the signatures are never read and source windows publish without owner policy tables. Replace them with real owner-signed policies before treating verification as a security boundary.",
+    "Archive wiring: CONFIG_XNU_NATIVE_UFS=y force-loads build/sheng-ufs/libShengUfs.a (the source-storage script writes that path) and the board archives list needs component:ShengUfs for the archive plan; CONFIG_XNU_EXTRA_LD_ARCHIVES must stay unset or the same objects link twice. Boot args are native-source-storage=1 native-ufs-root=1.",
 ]
 completion = [
-    "Host: register, clock and link facts match the board inventory. Reads: capacity, GPT and known blocks are correct. Root: the OS volume mounts and launchd starts.",
+    "Device: GCC and UFSHCI adopt the firmware state, SSU/TUR and READ(10) succeed with the 0xe0 SMMU stream, and the GPT/userdata LBA 3170304 is readable. Root: the SHNGROOT windows publish and the APFS OS volume mounts.",
 ]
 limits = [
-    "No SM8450 UFS driver exists in the component catalog.",
+    "The userdata partition still holds Android /data; SourceStorage reports no valid SHNGROOT manifest until build/userdata-root.img is flashed (owner-run fastboot, destroys Android data).",
+    "Root policies are forced unverified for the first bring-up; the dummy manifests are not a security boundary.",
 ]
 next_action = [
-    "Add UCD/PRDT allocation, response-UPIU parsing and a SCSI READ(10) transfer to the host model; then map MMIO in a kext and verify the SM8450 GCC clocks and link startup on the phone.",
+    "Boot boot-v4-ios27-ufsroot.img; expect GPT/read success and a manifest refusal with the current Android userdata. Then flash build/userdata-root.img and boot again to mount the OS volume UUID E3F4AED0-4454-4D5B-833C-E27E99C4F67B.",
 ]
 
 [[area.evidence]]
@@ -319,6 +330,13 @@ reference = "notes/device-2026-11-07.md"
 command = "adb shell su -c 'sh /data/local/tmp/collect2.sh'"
 revision = "4730e3b1fb52e1238a5d370bdc1f381622033de9"
 result = "iomem confirms ufshc 0x1d84000 (ufs_mem, ufs_ice 0x1d88000, ufs_ice_hwkm 0x1d90000) and PHY 0x1d87000; userdata is sda38, start512 25362432, size512 466862040 (LBA 3170304..61528058 at 4096 bytes)."
+
+[[area.evidence]]
+kind = "device"
+reference = "notes/UFS-PROBE-2026-11-13.md"
+command = "fastboot boot boot-v4-ios27-ufsread.img (panic-screen report)"
+revision = "484b9524a210075aac59aef81b17af231a1e0957"
+result = "boot-v4-ios27-ufsread.img on cupid: with SMMU stream 0xe0, SSU/TUR complete ocs=0 resp=00 scsi=00; READ(10) LBA 1 returns the GPT header (sig 20494645 54524150, 64 entries), hcs=0x10f, rsr=1, UTRLBA=0xff130000; READ(10) at userdata LBA 3170304 returns ocs=0. The stream-0x60 build SErrors."
 
 [[area]]
 id = "display"
