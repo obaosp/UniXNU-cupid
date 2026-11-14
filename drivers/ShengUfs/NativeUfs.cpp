@@ -2044,6 +2044,16 @@ static RootWindow gRootObject[4];
 static uint32_t gRootObjects;
 static uint64_t gRootObjectBase;
 
+#if !defined(NATIVE_VERIFIED_BLOCK) || !NATIVE_VERIFIED_BLOCK
+// Cupid bring-up without owner policies: the read path still records transport
+// timing and the stats text reads the verified-block counters, so these have to
+// exist outside the verified implementation below.
+volatile uint64_t native_ufs_verified_blocks = 0;
+volatile uint64_t native_ufs_verify_ticks = 0, native_ufs_read_ticks = 0;
+volatile uint32_t native_ufs_integrity_failures = 0;
+static inline uint64_t timerTicks (void) {uint64_t v; __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r" (v)); return v;}
+#endif
+
 #if defined(NATIVE_VERIFIED_BLOCK) && NATIVE_VERIFIED_BLOCK
 volatile uint64_t native_ufs_verified_blocks = 0;
 
