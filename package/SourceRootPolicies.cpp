@@ -26,12 +26,14 @@ NativeVerifiedBlockPolicy verified_root_policies[16];
 uint64_t verified_root_policy_count;
 }
 
+#if defined(NATIVE_VERIFIED_BLOCK) && NATIVE_VERIFIED_BLOCK
 static uint64_t read64(const uint8_t *p)
 {
     uint64_t n = 0;
     for (unsigned i = 0; i != 8; ++i) n |= uint64_t(p[i]) << (i * 8);
     return n;
 }
+#endif
 
 extern "C" bool native_source_root_policies_load(void)
 {
