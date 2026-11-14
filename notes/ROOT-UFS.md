@@ -127,3 +127,19 @@ SM8450 UFS driver**:
 3. Publish the SHNGROOT OS/SystemOS windows as standard `IOBlockStorageDevice`
    /`IOMedia` objects through the public IOStorageFamily, then let the
    original APFS kext attach.
+
+## Update 2026-11-14: the window runtime exists
+
+The SM8450 UFS transport is adapted (`drivers/ShengUfs`, stream 0xe0, GCC
+0x87000) and the sheng SourceStorage runtime is in `package/`. The kernel
+calls `native_source_storage_start()` after `vfsinit()`; the first root
+bring-up is unverified (dummy 24A446 policies, `NATIVE_VERIFIED_BLOCK=0`) and
+publishes the OS/SystemOS windows without owner policy tables.
+
+With Android userdata still in place the driver reads the GPT and userdata
+LBA 3170304, rejects the missing `SHNGROOT` manifest, and SourceStorage
+panics with "root step 3: root manifest rejected". After
+`build/userdata-root.img` is flashed the same image should publish both
+windows and let the original APFS kext mount `E3F4AED0-...`. See
+`notes/UFS-PROBE-2026-11-13.md` and `notes/FLASH-USERDATA.md` in the project
+notes.
