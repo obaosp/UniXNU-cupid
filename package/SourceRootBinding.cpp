@@ -14,7 +14,7 @@
 #include <sys/param.h>
 
 extern "C" {
-int native_ufs_block_authenticates(IOService *provider, const char *uuid, uint8_t *digest) __attribute__((weak_import));
+int native_ufs_block_authenticates(IOService *provider, const char *uuid, uint8_t *digest);
 int native_verified_block_root_authorized(dev_t device);
 int native_verified_block_manifest_sha384(dev_t device, const char *uuid, uint8_t digest[48]);
 int native_verified_block_volume_device(const char *uuid, dev_t *device, char *path, size_t size);
@@ -50,8 +50,7 @@ static int verifiedVolumeQuery(dev_t device, const char *expectedUUID, uint8_t *
             (expectedUUID && strcmp(expectedUUID, uuid->getCStringNoCopy()))) continue;
         unsigned depth = 0;
         for (IOService *provider = media; provider && depth < 64; provider = provider->getProvider(), ++depth) {
-            const int ufs = &native_ufs_block_authenticates
-                ? native_ufs_block_authenticates(provider, uuid->getCStringNoCopy(), manifestDigest) : -1;
+            const int ufs = native_ufs_block_authenticates(provider, uuid->getCStringNoCopy(), manifestDigest);
             if (ufs >= 0) {
                 authenticated = ufs == 1;
                 break;

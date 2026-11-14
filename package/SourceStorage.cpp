@@ -10,6 +10,26 @@
 #include <pexpert/pexpert.h>
 #include <IOKit/IOLib.h>
 #include <kern/thread.h>
+#include <mach/vm_types.h>
+
+// Cupid bring-up: sheng's ArmCpu fork exports the SPI mask helpers the UFS
+// interrupt path probes, and the payload-addon-release patch exports
+// ml_static_mfree_prepare for NativeRamBlock. Neither component is selected
+// here, and taking the address of an undefined weak import is a hard link
+// error on arm64e (authenticated pointer), so provide the conservative
+// definitions: no interrupt mode, no loader-memory release.
+extern "C" IOReturn armcpu_spi_attach(uint32_t, bool, void (*)(void *), void *, uint32_t *, uint64_t *)
+{
+    return kIOReturnUnsupported;
+}
+extern "C" IOReturn armcpu_spi_mask(uint32_t, bool)
+{
+    return kIOReturnUnsupported;
+}
+extern "C" bool ml_static_mfree_prepare(vm_offset_t, vm_size_t)
+{
+    return false;
+}
 
 extern kmod_info_t g_kernel_kmod_info;
 extern "C" void source_storage_base_init(void) __asm__("__GLOBAL__sub_I_IOBlockStorageDevice.cpp");

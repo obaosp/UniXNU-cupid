@@ -2414,6 +2414,17 @@ extern "C" int native_ufs_block_authenticates (IOService *provider, const char *
   }
   return block->authenticatesVolume (uuid, digest) ? 1 : 0;
 }
+#else
+// Cupid bring-up: no window carries a signed volume identity, so the root
+// authorization query reports "not a UFS window" for every provider. This is a
+// real definition (not just a weak import) because SourceRootBinding.cpp takes
+// its address and arm64e turns that into a hard authenticated-pointer
+// relocation.
+extern "C" int native_ufs_block_authenticates (IOService *provider, const char *uuid, uint8_t *digest)
+{
+  (void) provider; (void) uuid; (void) digest;
+  return -1;
+}
 #endif
 
 bool NativeUfsBlock::start (IOService *provider)
