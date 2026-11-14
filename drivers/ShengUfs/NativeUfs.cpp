@@ -1175,8 +1175,12 @@ static IOBufferMemoryDescriptor *hostContiguous (uint32_t bytes, IOOptionBits ca
     dma->release ();
     return nullptr;
   }
-  bzero (*virt, bytes);
-  cacheCivac (*virt, bytes);
+  // The write-combine list mapping is non-cacheable; bzero's DC ZVA faults
+  // there (cupid SM8450 media abort 2026-11-14). zero32 is the device-memory
+  // safe path used by the read test.
+  zero32 (*virt, bytes);
+  // DC CIVAC is equally undefined on the non-cacheable list mapping.
+  if (cache != kIOMapWriteCombineCache) cacheCivac (*virt, bytes);
   return dma;
 }
 static void hostSlotsUpgrade (unsigned regionSlots, unsigned entries, bool wide)
@@ -1271,7 +1275,7 @@ static bool hostBringUp (const char **why)
   hostSlotGeometryRegionA (regionSlots);
   hostSlotsInit (regionSlots, gHost.lock);
   native_ufs_slots = gSlotCount;
-  bzero (gHost.virt, gHost.dmaBytes);
+  zero32 (gHost.virt, gHost.dmaBytes);
   cacheCivac (gHost.virt, gHost.dmaBytes);
   uint32_t report[3] = { 0, 0, 0 };
   gRootDiagnostic.stage = "SMMU and request list";
